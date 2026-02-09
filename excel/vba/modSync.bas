@@ -30,6 +30,7 @@ Public Sub SyncAll()
     Call SnapshotTransactions
     Call RefreshPivots
     Call ShowDiagnostics
+    Call RefreshBudgetDashboard
 End Sub
 
 Private Sub SyncCsvAccounts(settings As Object, serviceUrl As String, sinceStr As String)

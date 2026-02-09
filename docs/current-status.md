@@ -26,6 +26,7 @@
 - Core model structs in `service/internal/models/`.
 - DB repo helpers in `service/internal/db/repo.go`.
 - Local SQLite database initialized at `%LOCALAPPDATA%\BudgetApp\data\budget.sqlite`.
+- Budget dashboard VBA module (`modBudget.bas`) with plan, envelopes, reallocations, and dashboard tables.
 
 ## Tooling Verified
 
