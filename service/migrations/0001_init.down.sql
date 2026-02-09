@@ -1,0 +1,6 @@
+DROP TABLE IF EXISTS raw_blobs;
+DROP TABLE IF EXISTS sync_runs;
+DROP TABLE IF EXISTS overrides;
+DROP TABLE IF EXISTS rules;
+DROP TABLE IF EXISTS transactions;
+DROP TABLE IF EXISTS accounts;
