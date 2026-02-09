@@ -24,5 +24,26 @@ Public Sub ShowDiagnostics()
           "Status: " & status & vbCrLf & _
           "Summary: " & summary
 
+    Call WriteDiagnosticsOutput(lastSync, status, summary)
     MsgBox msg, vbInformation, "Diagnostics"
+End Sub
+
+Private Sub WriteDiagnosticsOutput(lastSync As String, status As String, summary As String)
+    Dim ws As Worksheet
+    On Error Resume Next
+    Set ws = ThisWorkbook.Worksheets("Diagnostics")
+    On Error GoTo 0
+    If ws Is Nothing Then
+        Set ws = ThisWorkbook.Worksheets.Add(After:=ThisWorkbook.Worksheets(ThisWorkbook.Worksheets.Count))
+        ws.Name = "Diagnostics"
+    End If
+
+    ws.Range("A1").Value = "Last Sync"
+    ws.Range("B1").Value = lastSync
+    ws.Range("A2").Value = "Status"
+    ws.Range("B2").Value = status
+    ws.Range("A3").Value = "Summary"
+    ws.Range("B3").Value = summary
+    ws.Range("A4").Value = "Updated At"
+    ws.Range("B4").Value = Format$(Now, "yyyy-mm-dd hh:nn:ss")
 End Sub

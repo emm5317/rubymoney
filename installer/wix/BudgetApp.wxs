@@ -1,15 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <Product Id="*" Name="BudgetApp" Language="1033" Version="0.1.0" Manufacturer="BudgetExcel" UpgradeCode="B2B3C2A6-7E9E-4E0B-AE1C-4C7A4F2F5D10">
-    <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
+    <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" Platform="x64" />
     <MediaTemplate EmbedCab="yes" />
 
     <Directory Id="TARGETDIR" Name="SourceDir">
-      <Directory Id="ProgramFilesFolder">
-        <Directory Id="INSTALLFOLDER" Name="BudgetApp" />
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="INSTALLFOLDER" Name="BudgetApp">
+          <Directory Id="MigrationsDir" Name="migrations" />
+        </Directory>
       </Directory>
-      <Directory Id="ProgramMenuFolder">
-        <Directory Id="ProgramMenuDir" Name="BudgetApp" />
+      <Directory Id="CommonAppDataFolder">
+        <Directory Id="CommonAppDataMicrosoft" Name="Microsoft">
+          <Directory Id="CommonAppDataWindows" Name="Windows">
+            <Directory Id="CommonAppDataStartMenu" Name="Start Menu">
+              <Directory Id="CommonAppDataPrograms" Name="Programs">
+                <Directory Id="ProgramMenuDir" Name="BudgetApp" />
+              </Directory>
+            </Directory>
+          </Directory>
+        </Directory>
       </Directory>
     </Directory>
 
@@ -18,11 +28,17 @@
     </Feature>
 
     <ComponentGroup Id="BudgetAppComponents">
-      <Component Id="BudgetAppExecutable" Guid="{8F0C7A32-8B9E-4D1A-9B5D-9A7C1F7F2C1B}" Directory="INSTALLFOLDER">
+      <Component Id="BudgetAppExecutable" Guid="{8F0C7A32-8B9E-4D1A-9B5D-9A7C1F7F2C1B}" Directory="INSTALLFOLDER" Win64="yes">
         <File Id="BudgetdExe" Source="bin\budgetd.exe" KeyPath="yes" />
-        <Shortcut Id="StartMenuShortcut" Directory="ProgramMenuDir" Name="Budget Service" WorkingDirectory="INSTALLFOLDER" Icon="BudgetAppIcon" IconIndex="0" Advertise="no" />
+        <Shortcut Id="StartMenuShortcut" Directory="ProgramMenuDir" Name="Budget Service" WorkingDirectory="INSTALLFOLDER" Target="[INSTALLFOLDER]budgetd.exe" Icon="BudgetAppIcon" IconIndex="0" Advertise="no" />
         <RemoveFolder Id="RemoveStartMenuDir" Directory="ProgramMenuDir" On="uninstall" />
         <RegistryValue Root="HKLM" Key="Software\BudgetExcel\BudgetApp" Name="installed" Type="integer" Value="1" KeyPath="no" />
+      </Component>
+      <Component Id="MigrationDown" Guid="{0E7A1F05-3B25-48E8-8E1C-3420B1CA3FF7}" Directory="MigrationsDir" Win64="yes">
+        <File Id="MigrationDownSql" Source="..\..\service\migrations\0001_init.down.sql" KeyPath="yes" />
+      </Component>
+      <Component Id="MigrationUp" Guid="{BB65C656-B1A6-4E0C-B2D4-3DB4A951DD2C}" Directory="MigrationsDir" Win64="yes">
+        <File Id="MigrationUpSql" Source="..\..\service\migrations\0001_init.up.sql" KeyPath="no" />
       </Component>
     </ComponentGroup>
 

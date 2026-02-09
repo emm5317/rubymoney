@@ -29,6 +29,7 @@
 - Validate `csv_mappings.json` format.
 - Confirm date formats align with the CSV export.
 - Check amount convention and sign normalization.
+- Ensure CSV headers match a mapping and the file is UTF-8 (no BOM).
 
 ## Diagnostics Endpoint Empty
 

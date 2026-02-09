@@ -12,7 +12,7 @@ Public Sub ImportRules()
     Set tbl = GetTable("Rules", "rules")
 
     Dim payload As String
-    payload = "{\"rules\":["
+    payload = "{""rules"":[" 
 
     Dim i As Long
     For i = 1 To tbl.ListRows.Count
@@ -39,15 +39,15 @@ Public Sub ImportRules()
         If priority = "" Then priority = "0"
 
         payload = payload & "{" & _
-            "\"rule_id\":\"" & JsonEscape(ruleId) & "\"," & _
-            "\"priority\":" & priority & "," & _
-            "\"enabled\":" & enabled & "," & _
-            "\"match_field\":\"" & JsonEscape(CStr(row.Cells(1, 4).Value)) & "\"," & _
-            "\"match_type\":\"" & JsonEscape(CStr(row.Cells(1, 5).Value)) & "\"," & _
-            "\"match_value\":\"" & JsonEscape(CStr(row.Cells(1, 6).Value)) & "\"," & _
-            "\"category\":\"" & JsonEscape(CStr(row.Cells(1, 7).Value)) & "\"," & _
-            "\"subcategory\":\"" & JsonEscape(CStr(row.Cells(1, 8).Value)) & "\"," & _
-            "\"notes\":\"" & JsonEscape(CStr(row.Cells(1, 9).Value)) & "\"}"
+            """rule_id"":""" & JsonEscape(ruleId) & """," & _
+            """priority"":" & priority & "," & _
+            """enabled"":" & enabled & "," & _
+            """match_field"":""" & JsonEscape(CStr(row.Cells(1, 4).Value)) & """," & _
+            """match_type"":""" & JsonEscape(CStr(row.Cells(1, 5).Value)) & """," & _
+            """match_value"":""" & JsonEscape(CStr(row.Cells(1, 6).Value)) & """," & _
+            """category"":""" & JsonEscape(CStr(row.Cells(1, 7).Value)) & """," & _
+            """subcategory"":""" & JsonEscape(CStr(row.Cells(1, 8).Value)) & """," & _
+            """notes"":""" & JsonEscape(CStr(row.Cells(1, 9).Value)) & """}"
 
         If i < tbl.ListRows.Count Then
             payload = payload & ","
@@ -69,9 +69,9 @@ Public Sub ApplyRules(Optional force As Boolean = False)
 
     Dim body As String
     If force Then
-        body = "{\"force\":true}"
+        body = "{""force"":true}"
     Else
-        body = "{\"force\":false}"
+        body = "{""force"":false}"
     End If
 
     Call HttpPostJson(serviceUrl & "/v1/rules/apply", body)

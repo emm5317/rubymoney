@@ -29,6 +29,7 @@ Public Sub SyncAll()
     Call WriteTransactionsFromJson(txJson)
     Call SnapshotTransactions
     Call RefreshPivots
+    Call ShowDiagnostics
 End Sub
 
 Private Sub SyncCsvAccounts(settings As Object, serviceUrl As String, sinceStr As String)
@@ -44,23 +45,33 @@ Private Sub SyncCsvAccounts(settings As Object, serviceUrl As String, sinceStr A
         Set row = tbl.ListRows(i).Range
 
         Dim accountId As String
-        accountId = CStr(row.Cells(1, 1).Value)
+        accountId = GetRowValue(row, 1)
+        If accountId = "" Then GoTo continueLoop
+
         Dim connectorType As String
-        connectorType = LCase$(CStr(row.Cells(1, 5).Value))
+        connectorType = LCase$(GetRowValue(row, 5))
 
         If connectorType = "csv" And accountId <> "" Then
             Dim csvPath As String
             csvPath = FindNewestCsv(csvFolder)
             If csvPath <> "" Then
                 Dim body As String
-                body = "{\"since\":\"" & sinceStr & "\"," & _
-                       "\"account_ids\":[\"" & JsonEscape(accountId) & "\"]," & _
-                       "\"connector_options\":{\"csv_path\":\"" & JsonEscape(csvPath) & "\"}}"
+                body = "{""since"":""" & sinceStr & """," & _
+                    """account_ids"":[""" & JsonEscape(accountId) & """]," & _
+                    """connector_options"":{""csv_path"":""" & JsonEscape(csvPath) & """}}"
                 Call HttpPostJson(serviceUrl & "/v1/sync", body)
             End If
         End If
+continueLoop:
     Next i
 End Sub
+
+Private Function GetRowValue(row As Range, columnIndex As Long) As String
+    If row Is Nothing Then Exit Function
+    If columnIndex <= 0 Then Exit Function
+    If columnIndex > row.Columns.Count Then Exit Function
+    GetRowValue = CStr(row.Cells(1, columnIndex).Value)
+End Function
 
 Private Function FindNewestCsv(folderPath As String) As String
     Dim fso As Object
@@ -96,6 +107,10 @@ End Function
 Private Sub WriteTransactionsFromJson(json As String)
     Dim tbl As ListObject
     Set tbl = GetTable("Transactions", "transactions")
+    If tbl Is Nothing Then
+        MsgBox "Missing table: transactions on sheet: Transactions", vbExclamation, "BudgetExcel"
+        Exit Sub
+    End If
 
     Dim objects As Collection
     Set objects = JsonObjectsArray(json, "transactions")

@@ -23,9 +23,11 @@ $wixobj = Join-Path $objDir "BudgetApp.wixobj"
 $msi = Join-Path $outDir "BudgetApp.msi"
 
 Write-Host "Building MSI..."
+Push-Location $wixDir
 & candle.exe -nologo -out $wixobj $wxs
 if ($LASTEXITCODE -ne 0) { throw "candle.exe failed" }
 & light.exe -nologo -out $msi $wixobj
 if ($LASTEXITCODE -ne 0) { throw "light.exe failed" }
+Pop-Location
 
 Write-Host "MSI created at: $msi"

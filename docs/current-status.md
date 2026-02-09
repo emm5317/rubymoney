@@ -3,7 +3,8 @@
 ## Repo State (as of 2026-02-09)
 
 - Folder structure created.
-- Stub files present for Excel, VBA modules, Go service, WiX, and docs.
+- Excel workbook initialized and VBA modules updated for JSON-safe payloads and diagnostics output.
+- WiX MSI build fixed for 64-bit Program Files installs and Start Menu shortcut targeting.
 - Documentation exists for architecture, API, DB schema, CSV mapping, VBA outline, acceptance tests, packaging, setup, security, troubleshooting, and build plans.
 - Initial SQLite migrations created and applied.
 
@@ -19,6 +20,7 @@
 - Rules engine implementation in `service/internal/rules/rules.go`.
 - VBA modules in `excel/vba/`.
 - WiX packaging assets + build script in `installer/`.
+- Helper scripts in `scripts/` for CSV fixture generation and health checks.
 - Automated tests for CSV importer, rules, idempotent upsert, and overrides.
 - Minimal redaction helper in `service/internal/logging/logging.go`.
 - Core model structs in `service/internal/models/`.
@@ -47,3 +49,4 @@
 ## Next Build Milestones
 
 - Optional: add WiX startup task toggle.
+- Optional: add seeded CSV mapping fixtures for test imports.

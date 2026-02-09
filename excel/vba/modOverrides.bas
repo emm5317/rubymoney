@@ -15,7 +15,7 @@ Public Sub CommitOverrides()
     Set previous = SnapshotOverridesMap()
 
     Dim payload As String
-    payload = "{\"overrides\":["
+    payload = "{""overrides"":["
 
     Dim key As Variant
     Dim first As Boolean
@@ -48,16 +48,16 @@ Public Sub CommitOverrides()
             first = False
 
             payload = payload & "{" & _
-                "\"txn_id\":\"" & JsonEscape(CStr(key)) & "\"," & _
-                "\"category\":\"" & JsonEscape(category) & "\"," & _
-                "\"subcategory\":\"" & JsonEscape(subcategory) & "\"," & _
-                "\"updated_at\":\"" & JsonEscape(UtcNowIso()) & "\"}"
+                """txn_id"":""" & JsonEscape(CStr(key)) & """," & _
+                """category"":""" & JsonEscape(category) & """," & _
+                """subcategory"":""" & JsonEscape(subcategory) & """," & _
+                """updated_at"":""" & JsonEscape(UtcNowIso()) & """}"
         End If
     Next key
 
     payload = payload & "]}"
 
-    If payload <> "{\"overrides\":[]}" Then
+    If payload <> "{""overrides"":[]}" Then
         Call HttpPostJson(serviceUrl & "/v1/overrides/import", payload)
     End If
 

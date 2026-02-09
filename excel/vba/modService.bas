@@ -18,7 +18,7 @@ Public Function GetSettings() As Object
     For Each r In tbl.ListRows
         Dim key As String
         Dim value As String
-        key = Trim(CStr(r.Range.Cells(1, 1).Value))
+        key = Trim$(CStr(r.Range.Cells(1, 1).Value))
         value = CStr(r.Range.Cells(1, 2).Value)
         If key <> "" Then
             dict(key) = value
@@ -42,8 +42,26 @@ End Function
 
 Public Function GetTable(sheetName As String, tableName As String) As ListObject
     Dim ws As Worksheet
+    On Error Resume Next
     Set ws = ThisWorkbook.Worksheets(sheetName)
-    Set GetTable = ws.ListObjects(tableName)
+    On Error GoTo 0
+    If ws Is Nothing Then
+        MsgBox "Missing sheet: " & sheetName, vbExclamation, "BudgetExcel"
+        Set GetTable = Nothing
+        Exit Function
+    End If
+
+    Dim tbl As ListObject
+    On Error Resume Next
+    Set tbl = ws.ListObjects(tableName)
+    On Error GoTo 0
+    If tbl Is Nothing Then
+        MsgBox "Missing table: " & tableName & " on sheet: " & sheetName, vbExclamation, "BudgetExcel"
+        Set GetTable = Nothing
+        Exit Function
+    End If
+
+    Set GetTable = tbl
 End Function
 
 Public Function EnsureServiceRunning(settings As Object) As Boolean
@@ -139,8 +157,12 @@ End Function
 Public Function JsonEscape(value As String) As String
     Dim s As String
     s = value
-    s = Replace(s, "\", "\\")
-    s = Replace(s, """", "\"")
+    Dim quote As String
+    quote = """"
+    Dim slash As String
+    slash = "\"
+    s = Replace(s, slash, slash & slash)
+    s = Replace(s, quote, slash & quote)
     s = Replace(s, vbCrLf, "\n")
     s = Replace(s, vbCr, "\n")
     s = Replace(s, vbLf, "\n")
@@ -150,7 +172,7 @@ End Function
 Public Function JsonValue(obj As String, field As String) As String
     Dim re As Object
     Set re = CreateObject("VBScript.RegExp")
-    re.Pattern = "\"" & field & "\"\s*:\s*(\"([^\"]*)\"|(-?\d+(?:\.\d+)?)|(true|false|null))"
+    re.Pattern = """" & field & """" & "\s*:\s*(""([^""]*)""|(-?\d+(?:\.\d+)?)|(true|false|null))"
     re.IgnoreCase = True
     re.Global = False
 
@@ -176,8 +198,12 @@ End Function
 Public Function JsonUnescape(value As String) As String
     Dim s As String
     s = value
-    s = Replace(s, "\"", """)
-    s = Replace(s, "\\", "\")
+    Dim quote As String
+    quote = """"
+    Dim slash As String
+    slash = "\"
+    s = Replace(s, slash & slash, slash)
+    s = Replace(s, slash & quote, quote)
     s = Replace(s, "\n", vbLf)
     JsonUnescape = s
 End Function
