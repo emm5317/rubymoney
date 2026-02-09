@@ -25,6 +25,7 @@ The Excel workbook (`excel/Budget.xlsm`) is the UI. A local Go service (`service
 - `docs/end-state.md`
 - `docs/current-status.md`
 - `docs/build-plan.md`
+- `docs/build-plan-quick.md`
 - `docs/api.md`
 - `docs/db-schema.md`
 - `docs/csv-mapping.md`

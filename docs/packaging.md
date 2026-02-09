@@ -1,37 +1,23 @@
 # Packaging (WiX)
 
-## Goals
+## MSI Contents
 
-- MSI installs `budgetd.exe`.
-- Optional Start Menu shortcut "Budget Service".
-- Optional startup task to run on login.
-- App data directories created on first run.
-
-## Artifacts
-
-- `installer/wix/BudgetApp.wxs`
-- `installer/wix/BudgetApp.wixproj` or build script
-- `service/cmd/budgetd` build output
+- `budgetd.exe` installed to `C:\Program Files\BudgetApp\budgetd.exe`
+- Start Menu shortcut: `Budget Service`
 
 ## Build Script
 
-Provide `installer/build.ps1` that:
+Run:
 
-- Builds `budgetd.exe` for Windows.
-- Collects files for WiX.
-- Runs WiX to generate MSI.
+```powershell
+powershell -ExecutionPolicy Bypass -File C:\dev\budgetexcel\installer\build.ps1
+```
 
-## Installation Layout
+Outputs:
 
-- Program files:
-- `budgetd.exe`
+- `installer\wix\output\BudgetApp.msi`
 
-- Local app data:
-- `%LOCALAPPDATA%\BudgetApp\data\`
-- `%LOCALAPPDATA%\BudgetApp\config\`
-- `%LOCALAPPDATA%\BudgetApp\secrets\`
+## Notes
 
-## Uninstall
-
-- Remove program files and shortcuts.
-- Leave user data in `%LOCALAPPDATA%` by default.
+- Startup task is not created by default.
+- The service creates its own data/config folders under `%LOCALAPPDATA%\BudgetApp` on first run.

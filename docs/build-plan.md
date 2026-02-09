@@ -1,22 +1,24 @@
 # Build Plan (Windows / PowerShell)
 
-This plan matches the required repo layout and uses Windows-native tooling.
+This is a comprehensive, step-by-step plan to implement the full BudgetExcel system.
 
-## Prereqs (one-time)
+## Phase 0 - Prereqs and Tooling
+
+Verify:
 
 ```powershell
 go version
 git --version
 ```
 
-Install WiX:
+Install WiX (v3):
 
 ```powershell
 choco install -y wixtoolset
 $env:Path += ";C:\Program Files (x86)\WiX Toolset v3.14\bin"
 ```
 
-Install MinGW (for CGO):
+Install MinGW (for CGO builds):
 
 ```powershell
 choco install -y mingw
@@ -40,26 +42,12 @@ light -?
 migrate -version
 ```
 
-## Repo Skeleton
+## Phase 1 - Go Service Skeleton
+
+Create the module (if not already created):
 
 ```powershell
-mkdir -Force budgetexcel\service\cmd\budgetd
-mkdir -Force budgetexcel\service\internal\api
-mkdir -Force budgetexcel\service\internal\db
-mkdir -Force budgetexcel\service\internal\models
-mkdir -Force budgetexcel\service\internal\rules
-mkdir -Force budgetexcel\service\internal\connectors\csv
-mkdir -Force budgetexcel\service\internal\connectors\ofx
-mkdir -Force budgetexcel\service\internal\secrets
-mkdir -Force budgetexcel\service\internal\sync
-mkdir -Force budgetexcel\service\internal\logging
-mkdir -Force budgetexcel\service\migrations
-```
-
-## Create Service Module
-
-```powershell
-cd budgetexcel\service
+cd C:\dev\budgetexcel\service
 
 go mod init budgetexcel/service
 
@@ -73,28 +61,105 @@ go get github.com/golang-migrate/migrate/v4/source/file
 go get github.com/google/uuid
 ```
 
-## Migrations (create + run)
+Implement `budgetd`:
 
-Create:
+- `cmd/budgetd/main.go`: config, logging, Fiber setup, route registration.
+- `internal/logging`: structured logging + redaction helpers.
+- `internal/api`: handlers and request/response structs.
 
-- `service/migrations/0001_init.up.sql`
-- `service/migrations/0001_init.down.sql`
+## Phase 2 - Database Wiring
 
-Run:
+- `internal/db`: open SQLite, migrations runner, query helpers.
+- Ensure `PRAGMA foreign_keys = ON` and WAL mode.
+
+Run migrations:
 
 ```powershell
 migrate -path "C:/dev/budgetexcel/service/migrations" -database "sqlite3://C:/Users/Admin/AppData/Local/BudgetApp/data/budget.sqlite" up
 ```
 
-## Run Service (later)
+## Phase 3 - Models and Repos
+
+- `internal/models`: typed models for accounts, transactions, rules, overrides, sync_runs.
+- `internal/db`: repo functions for CRUD and upserts.
+- Implement idempotent upsert logic (external id or fingerprint).
+
+## Phase 4 - Rules Engine
+
+- `internal/rules`: deterministic matching and apply.
+- Respect overrides: if override exists, do not overwrite category/subcategory.
+- Add `apply rules` modes: uncategorized (default) and force.
+
+## Phase 5 - CSV Connector (MVP)
+
+- `internal/connectors/csv`: mapping, parsing, normalization, and import pipeline.
+- Load mapping config from `%LOCALAPPDATA%\BudgetApp\config\csv_mappings.json`.
+- Auto-detect headers fallback for common banks.
+- Implement file-path import for MVP.
+
+## Phase 6 - Sync Pipeline
+
+- `internal/sync`: orchestrate import, dedupe, pending->posted reconciliation.
+- Implement per-account sync runs with summary stored in `sync_runs`.
+
+## Phase 7 - HTTP API (Fiber)
+
+Implement endpoints:
+
+- `GET /v1/health`
+- `POST /v1/rules/import`
+- `POST /v1/rules/apply`
+- `POST /v1/sync`
+- `GET /v1/transactions?since=YYYY-MM-DD`
+- `POST /v1/overrides/import`
+- `GET /v1/diagnostics`
+- `GET /v1/logs?tail=200`
+
+Add consistent JSON error envelope:
+
+```json
+{ "error": { "code": "...", "message": "...", "details": ... } }
+```
+
+## Phase 8 - Excel + VBA
+
+Implement VBA modules:
+
+- `modService`: start/check service
+- `modSync`: push rules, sync, pull transactions, refresh pivots
+- `modRules`: push rules, apply rules
+- `modOverrides`: detect edits, push overrides
+- `modDiagnostics`: show last sync summary/errors
+
+Use table names exactly as specified in `docs/vba.md` and `docs/db-schema.md`.
+
+## Phase 9 - Packaging (WiX)
+
+- Implement WiX project `installer/wix/BudgetApp.wxs`.
+- Create `installer/build.ps1` to build `budgetd.exe`, then candle/light the MSI.
+
+## Phase 10 - Tests
+
+Manual acceptance tests (see `docs/acceptance-tests.md`).
+
+Add automated tests:
+
+- CSV import idempotency
+- Rules application and override protection
+- Pending->posted reconciliation
+- Error envelope contract
+
+## Run Targets
+
+Local dev run:
 
 ```powershell
 cd C:\dev\budgetexcel\service
 go run .\cmd\budgetd
 ```
 
-## Build MSI (later)
+Build MSI (after WiX project added):
 
 ```powershell
-# to be added in installer/build.ps1
+powershell -ExecutionPolicy Bypass -File C:\dev\budgetexcel\installer\build.ps1
 ```

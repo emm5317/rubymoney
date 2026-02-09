@@ -11,7 +11,7 @@
 ## Shared Helpers
 
 - `HttpPostJson(url, body)` returns response JSON
-- `HttpGet(url)` returns response JSON
+- `HttpGetJson(url)` returns response JSON
 - `ReadSettings()` reads Config table into a dictionary
 - `WriteTable(listObjectName, rows)` bulk writes to Excel table
 
@@ -56,6 +56,7 @@
 - `POST /v1/sync`
 - `GET /v1/transactions?since=...`
 - `POST /v1/overrides/import`
+- `POST /v1/rules/apply`
 - `GET /v1/diagnostics`
 - `GET /v1/logs?tail=200`
 
