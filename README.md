@@ -33,6 +33,7 @@ The Excel workbook (`excel/Budget.xlsm`) is the UI. A local Go service (`service
 - `docs/acceptance-tests.md`
 - `docs/edge-cases.md`
 - `docs/budget-dashboard.md`
+- `docs/import-assistant.md`
 - `docs/packaging.md`
 - `docs/setup.md`
 - `docs/security.md`

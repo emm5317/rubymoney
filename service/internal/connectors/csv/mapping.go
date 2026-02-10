@@ -5,6 +5,8 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -23,6 +25,8 @@ type Mapping struct {
 	InstitutionID  string              `json:"institution_id,omitempty"`
 	AccountHint    string              `json:"account_hint,omitempty"`
 	Currency       string              `json:"currency,omitempty"`
+	FileNameHints  []string            `json:"file_name_hints,omitempty"`
+	FileNameRegex  string              `json:"file_name_regex,omitempty"`
 	HeaderRow      int                 `json:"header_row,omitempty"`
 	SkipRows       []int               `json:"skip_rows,omitempty"`
 	DateTimezone   string              `json:"date_timezone,omitempty"`
@@ -42,6 +46,9 @@ type MappingFile struct {
 }
 
 func DefaultMappingPath() string {
+	if dir := DefaultMappingsDir(); dir != "" {
+		return dir
+	}
 	localAppData := os.Getenv("LOCALAPPDATA")
 	if localAppData == "" {
 		if home, err := os.UserHomeDir(); err == nil {
@@ -54,29 +61,34 @@ func DefaultMappingPath() string {
 	return filepath.Join(localAppData, "BudgetApp", "config", "csv_mappings.json")
 }
 
+func DefaultMappingsDir() string {
+	localAppData := os.Getenv("LOCALAPPDATA")
+	if localAppData == "" {
+		if home, err := os.UserHomeDir(); err == nil {
+			localAppData = filepath.Join(home, "AppData", "Local")
+		}
+	}
+	if localAppData == "" {
+		return ""
+	}
+	return filepath.Join(localAppData, "BudgetApp", "config", "csv_mappings")
+}
+
 func LoadMappings(path string) (MappingFile, error) {
 	if path == "" {
 		path = DefaultMappingPath()
 	}
-	data, err := os.ReadFile(path)
+	info, err := os.Stat(path)
+	if err == nil && info.IsDir() {
+		return loadMappingsDir(path)
+	}
+	if errors.Is(err, os.ErrNotExist) {
+		return MappingFile{}, nil
+	}
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return MappingFile{}, nil
-		}
 		return MappingFile{}, err
 	}
-
-	var file MappingFile
-	if err := json.Unmarshal(data, &file); err == nil && len(file.Mappings) > 0 {
-		return file, nil
-	}
-
-	var list []Mapping
-	if err := json.Unmarshal(data, &list); err == nil {
-		return MappingFile{Mappings: list}, nil
-	}
-
-	return MappingFile{}, errors.New("invalid csv_mappings.json")
+	return loadMappingsFile(path)
 }
 
 func MatchMapping(headers []string, mappings []Mapping) (Mapping, bool) {
@@ -118,6 +130,33 @@ func mappingMatches(headers map[string]struct{}, m Mapping) bool {
 	return true
 }
 
+func mappingMatchesWithFile(headers map[string]struct{}, m Mapping, fileName string) bool {
+	if !mappingMatches(headers, m) {
+		return false
+	}
+	if len(m.FileNameHints) == 0 && m.FileNameRegex == "" {
+		return true
+	}
+	if fileName == "" {
+		return false
+	}
+	name := strings.ToLower(fileName)
+	for _, hint := range m.FileNameHints {
+		if hint == "" {
+			continue
+		}
+		if strings.Contains(name, strings.ToLower(hint)) {
+			return true
+		}
+	}
+	if m.FileNameRegex != "" {
+		if re, err := regexp.Compile(m.FileNameRegex); err == nil {
+			return re.MatchString(fileName)
+		}
+	}
+	return false
+}
+
 func normalizeHeader(value string) string {
 	value = strings.TrimSpace(value)
 	value = strings.ToLower(value)
@@ -125,4 +164,59 @@ func normalizeHeader(value string) string {
 	value = strings.ReplaceAll(value, "-", " ")
 	value = strings.Join(strings.Fields(value), " ")
 	return value
+}
+
+func loadMappingsDir(dir string) (MappingFile, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return MappingFile{}, nil
+		}
+		return MappingFile{}, err
+	}
+
+	var names []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		if strings.ToLower(filepath.Ext(entry.Name())) != ".json" {
+			continue
+		}
+		names = append(names, entry.Name())
+	}
+	sort.Strings(names)
+
+	var out MappingFile
+	for _, name := range names {
+		path := filepath.Join(dir, name)
+		file, err := loadMappingsFile(path)
+		if err != nil {
+			return MappingFile{}, err
+		}
+		out.Mappings = append(out.Mappings, file.Mappings...)
+	}
+	return out, nil
+}
+
+func loadMappingsFile(path string) (MappingFile, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return MappingFile{}, nil
+		}
+		return MappingFile{}, err
+	}
+
+	var file MappingFile
+	if err := json.Unmarshal(data, &file); err == nil && len(file.Mappings) > 0 {
+		return file, nil
+	}
+
+	var list []Mapping
+	if err := json.Unmarshal(data, &list); err == nil {
+		return MappingFile{Mappings: list}, nil
+	}
+
+	return MappingFile{}, errors.New("invalid csv_mappings.json")
 }

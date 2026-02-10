@@ -1,0 +1,18 @@
+[
+  {
+    "institution": "Chase Credit Card",
+    "institution_id": "chase_card",
+    "file_name_hints": ["chase", "credit", "card"],
+    "headers": {
+      "date": ["Transaction Date", "Post Date", "Date"],
+      "amount": ["Amount", "Transaction Amount"],
+      "payee": ["Description", "Merchant", "Payee"],
+      "memo": ["Category", "Type", "Memo"]
+    },
+    "required_fields": ["date", "amount", "payee"],
+    "date_formats": ["01/02/2006", "2006-01-02"],
+    "amount": { "convention": "expenses_positive" },
+    "trim_quotes": true,
+    "notes": "Template mapping; adjust headers/date formats to match your export."
+  }
+]

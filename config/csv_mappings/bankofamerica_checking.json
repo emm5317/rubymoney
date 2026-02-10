@@ -1,0 +1,18 @@
+[
+  {
+    "institution": "Bank of America",
+    "institution_id": "boa_checking",
+    "file_name_hints": ["bank of america", "bofa", "boa", "checking", "savings"],
+    "headers": {
+      "date": ["Posting Date", "Posted Date", "Date", "Transaction Date"],
+      "amount": ["Amount", "Total Amount", "Transaction Amount"],
+      "payee": ["Description", "Payee", "Name", "Original Description"],
+      "memo": ["Memo", "Details", "Type"]
+    },
+    "required_fields": ["date", "amount", "payee"],
+    "date_formats": ["01/02/2006", "2006-01-02"],
+    "amount": { "convention": "expenses_negative" },
+    "trim_quotes": true,
+    "notes": "Template mapping; adjust headers/date formats to match your export."
+  }
+]

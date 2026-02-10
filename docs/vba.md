@@ -7,6 +7,7 @@
 - `modRules` import rules and apply rules
 - `modOverrides` detect manual changes and push overrides
 - `modDiagnostics` show last sync summary and errors
+- `modAssistant` reminders and import assistant helpers
 
 ## Shared Helpers
 
@@ -65,3 +66,4 @@
 - VBA must not handle secrets.
 - Store a hidden snapshot sheet or hash per row to detect changes.
 - Use bulk table writes to avoid slow per-cell updates.
+- Reminder/assistant sheets are populated by VBA (values) to avoid Excel structured-reference issues.

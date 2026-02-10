@@ -1,0 +1,18 @@
+[
+  {
+    "institution": "Citi Credit Card",
+    "institution_id": "citi_card",
+    "file_name_hints": ["citi", "citibank", "credit", "card"],
+    "headers": {
+      "date": ["Date", "Transaction Date", "Posting Date"],
+      "amount": ["Amount", "Transaction Amount"],
+      "payee": ["Description", "Merchant", "Payee"],
+      "memo": ["Category", "Memo", "Reference"]
+    },
+    "required_fields": ["date", "amount", "payee"],
+    "date_formats": ["01/02/2006", "2006-01-02"],
+    "amount": { "convention": "expenses_positive" },
+    "trim_quotes": true,
+    "notes": "Template mapping; adjust headers/date formats to match your export."
+  }
+]

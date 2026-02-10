@@ -26,9 +26,10 @@
 
 ## CSV Import Errors
 
-- Validate `csv_mappings.json` format.
+- Validate mapping files under `%LOCALAPPDATA%\BudgetApp\config\csv_mappings\` (or legacy `csv_mappings.json`) format.
 - Confirm date formats align with the CSV export.
 - Check amount convention and sign normalization.
+- If using `file_name_hints` or `file_name_regex`, confirm the CSV filename matches.
 - Ensure CSV headers match a mapping and the file is UTF-8 (no BOM).
 
 ## Diagnostics Endpoint Empty

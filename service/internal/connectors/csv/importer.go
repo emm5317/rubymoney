@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -52,6 +53,7 @@ func ImportFile(path string, opts ImportOptions) (ImportResult, error) {
 	var mapping Mapping
 	matched := false
 	rowIndex := 0
+	baseName := strings.ToLower(filepath.Base(path))
 
 	for {
 		record, err := reader.Read()
@@ -69,7 +71,7 @@ func ImportFile(path string, opts ImportOptions) (ImportResult, error) {
 					if candidate.HeaderRow > 0 && candidate.HeaderRow != rowIndex {
 						continue
 					}
-					if mappingMatches(normalizeHeaderRow(record), candidate) {
+					if mappingMatchesWithFile(normalizeHeaderRow(record), candidate, baseName) {
 						header = record
 						mapping = candidate
 						matched = true

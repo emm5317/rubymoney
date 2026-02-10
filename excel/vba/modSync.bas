@@ -54,13 +54,20 @@ Private Sub SyncCsvAccounts(settings As Object, serviceUrl As String, sinceStr A
 
         If connectorType = "csv" And accountId <> "" Then
             Dim csvPath As String
-            csvPath = FindNewestCsv(csvFolder)
+            Dim assistantPath As String
+            assistantPath = GetAssistantCsvPath(accountId)
+            If assistantPath <> "" Then
+                csvPath = assistantPath
+            Else
+                csvPath = FindNewestCsv(csvFolder)
+            End If
             If csvPath <> "" Then
                 Dim body As String
                 body = "{""since"":""" & sinceStr & """," & _
                     """account_ids"":[""" & JsonEscape(accountId) & """]," & _
                     """connector_options"":{""csv_path"":""" & JsonEscape(csvPath) & """}}"
                 Call HttpPostJson(serviceUrl & "/v1/sync", body)
+                Call MarkCsvImported(accountId, csvPath)
             End If
         End If
 continueLoop:
@@ -105,7 +112,7 @@ Private Function FindNewestCsv(folderPath As String) As String
     End If
 End Function
 
-Private Sub WriteTransactionsFromJson(json As String)
+Public Sub WriteTransactionsFromJson(json As String)
     Dim tbl As ListObject
     Set tbl = GetTable("Transactions", "transactions")
     If tbl Is Nothing Then
@@ -163,7 +170,7 @@ Private Sub WriteTransactionsFromJson(json As String)
     tbl.Range.Resize(objects.Count + 1).Rows(2).Resize(objects.Count, tbl.ListColumns.Count).Value = rows
 End Sub
 
-Private Sub RefreshPivots()
+Public Sub RefreshPivots()
     Dim ws As Worksheet
     For Each ws In ThisWorkbook.Worksheets
         Dim pvt As PivotTable

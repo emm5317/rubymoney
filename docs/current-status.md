@@ -27,6 +27,8 @@
 - DB repo helpers in `service/internal/db/repo.go`.
 - Local SQLite database initialized at `%LOCALAPPDATA%\BudgetApp\data\budget.sqlite`.
 - Budget dashboard VBA module (`modBudget.bas`) with plan, envelopes, reallocations, and dashboard tables.
+- Reminders and Import Assistant VBA module (`modAssistant.bas`) for CSV imports.
+- Per-bank CSV mapping templates in `config/csv_mappings/`.
 
 ## Tooling Verified
 
@@ -50,4 +52,4 @@
 ## Next Build Milestones
 
 - Optional: add WiX startup task toggle.
-- Optional: add seeded CSV mapping fixtures for test imports.
+- Optional: refine CSV mapping templates after validating bank exports.

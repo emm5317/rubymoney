@@ -6,14 +6,18 @@ Support CSV imports from multiple institutions with variable headers, date forma
 
 ## Config File
 
-Path: `%LOCALAPPDATA%\BudgetApp\config\csv_mappings.json`
+Preferred path: `%LOCALAPPDATA%\BudgetApp\config\csv_mappings\`
+
+Fallback path (legacy): `%LOCALAPPDATA%\BudgetApp\config\csv_mappings.json`
+
+Repo templates: `config/csv_mappings/` (copy to the preferred path).
 
 The loader accepts either:
 
-- A top-level object `{ "mappings": [ ... ] }` or
-- A top-level array `[ ... ]`
+- A folder of `*.json` mapping files. Each file can be a top-level object `{ "mappings": [ ... ] }` or a top-level array `[ ... ]`.
+- A single `csv_mappings.json` file in the legacy location (same formats).
 
-If the file does not exist, the loader returns an empty list and the connector relies on auto-detect.
+If no mapping files exist, the loader returns an empty list and the connector relies on auto-detect.
 
 ## Schema
 
@@ -32,6 +36,8 @@ Optional:
 - `institution_id`
 - `account_hint`
 - `currency`
+- `file_name_hints`
+- `file_name_regex`
 - `header_row`
 - `skip_rows`
 - `amount_columns`
@@ -53,6 +59,8 @@ Optional:
 - `institution_id`: stable ID for the mapping (useful if name changes).
 - `account_hint`: string to help map CSVs to a specific account.
 - `currency`: default currency code (e.g., `USD`).
+- `file_name_hints`: list of substrings to match against the CSV filename (case-insensitive).
+- `file_name_regex`: optional regex to match the CSV filename.
 - `header_row`: 1-based row index containing headers (default 1).
 - `skip_rows`: list of 1-based row indexes to skip.
 - `amount_columns`: split columns for debit/credit (overrides `amount` sign convention if present).
@@ -65,6 +73,7 @@ Optional:
 
 - Normalize header names (case/whitespace/underscore/dash).
 - A mapping matches if all `required_fields` are present in the CSV header row.
+- If `file_name_hints` or `file_name_regex` are set, the filename must match as well.
 - First matching mapping is selected; if none match, import fails with a clear error.
 
 ## Example 1 (Bank A)
@@ -73,6 +82,7 @@ Optional:
 {
   "institution": "Bank A",
   "institution_id": "bank_a_checking",
+  "file_name_hints": ["bank_a", "checking"],
   "headers": {
     "date": ["Posting Date", "Date"],
     "amount": ["Amount"],
@@ -97,6 +107,7 @@ Optional:
 {
   "institution": "Credit Card B",
   "institution_id": "card_b_primary",
+  "file_name_hints": ["card_b", "credit"],
   "headers": {
     "date": ["Transaction Date", "Date"],
     "amount": ["Charge Amount", "Amount"],
@@ -128,3 +139,7 @@ Optional:
 - Reject rows with missing required fields.
 - Warn on unparseable dates.
 - Cap row count and payload size to prevent oversized imports.
+
+## Future
+
+- OFX/QFX importer is a planned enhancement (not implemented yet).

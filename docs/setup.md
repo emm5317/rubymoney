@@ -55,9 +55,16 @@ migrate -version
 
 - App data: `%LOCALAPPDATA%\BudgetApp\`
 - Database: `%LOCALAPPDATA%\BudgetApp\data\budget.sqlite`
-- Config: `%LOCALAPPDATA%\BudgetApp\config\csv_mappings.json`
+- Config (preferred): `%LOCALAPPDATA%\BudgetApp\config\csv_mappings\`
+- Config (legacy): `%LOCALAPPDATA%\BudgetApp\config\csv_mappings.json`
 - Secrets: `%LOCALAPPDATA%\BudgetApp\secrets\`
 - CSV import folder: `%USERPROFILE%\Downloads\BudgetImports`
+
+## CSV Mapping Templates
+
+Per-bank template mappings live in `config/csv_mappings/`. Copy the needed files to:
+
+`%LOCALAPPDATA%\BudgetApp\config\csv_mappings\`
 
 ## Configuration in Excel
 
