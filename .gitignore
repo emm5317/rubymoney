@@ -10,6 +10,9 @@ logs/
 *.sqlite
 *.db
 
+# Sample/transaction data (do not commit)
+/samples/**/*.csv
+
 # Env
 .env
 .env.*
