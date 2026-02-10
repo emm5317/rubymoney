@@ -2,17 +2,19 @@
   {
     "institution": "Bank of America",
     "institution_id": "boa_checking",
-    "file_name_hints": ["bank of america", "bofa", "boa", "checking", "savings"],
+    "file_name_hints": ["bank of america", "bofa", "boa", "checking", "savings", "statement", "stmt"],
     "headers": {
-      "date": ["Posting Date", "Posted Date", "Date", "Transaction Date"],
-      "amount": ["Amount", "Total Amount", "Transaction Amount"],
+      "date": ["Date", "Posting Date", "Posted Date", "Transaction Date"],
+      "amount": ["Amount", "Total Amount", "Transaction Amount", "Summary Amt."],
       "payee": ["Description", "Payee", "Name", "Original Description"],
-      "memo": ["Memo", "Details", "Type"]
+      "memo": ["Memo", "Details", "Type", "Running Bal."]
     },
     "required_fields": ["date", "amount", "payee"],
-    "date_formats": ["01/02/2006", "2006-01-02"],
+    "date_formats": ["1/2/2006", "01/02/2006", "2006-01-02"],
     "amount": { "convention": "expenses_negative" },
+    "header_row": 7,
+    "skip_rows": [1, 2, 3, 4, 5, 6, 8],
     "trim_quotes": true,
-    "notes": "Template mapping; adjust headers/date formats to match your export."
+    "notes": "Validated with BoA statement CSV: summary rows before headers; debits are negative, credits positive; running balance column present."
   }
 ]

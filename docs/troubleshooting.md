@@ -31,8 +31,18 @@
 - Check amount convention and sign normalization.
 - If using `file_name_hints` or `file_name_regex`, confirm the CSV filename matches.
 - Ensure CSV headers match a mapping and the file is UTF-8 (no BOM).
+- Bank of America statement CSVs include summary lines; ensure `header_row` and `skip_rows` are set (header is row 7).
+- If sync fails with `FOREIGN KEY constraint failed`, the `account_id` in Excel does not exist in the service database. Ensure the Accounts sheet uses an existing `account_id`, or insert the account into the local `accounts` table.
+- If transactions import succeeds but the Transactions table stays empty, the table headers may be collapsed into a single cell. Run the `FixTransactionsTableHeaders` macro (module `modTroubleshoot`) to restore the 20 expected headers and then re-run import.
 
 ## Diagnostics Endpoint Empty
 
 - Ensure a sync has run.
 - Confirm `/v1/diagnostics` is not redacting the entire payload.
+
+## Suggestions Not Appearing
+
+- Confirm `LLM_ENABLED=true` and `LLM_MODEL_PATH` points to a valid GGUF file.
+- Ensure `llama-cli` (or `llama`) is available on `PATH`.
+- Run `Refresh Suggestions` after `Suggest Categories (Blanks)` to pull suggested fields into Excel.
+- If suggestions are queued but no updates appear, check `logs` for `suggestion job error` messages.

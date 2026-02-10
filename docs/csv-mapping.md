@@ -128,6 +128,11 @@ Optional:
 }
 ```
 
+## Bank-Specific Notes
+
+- Bank of America Checking/Savings statement CSV exports include summary rows before the real header. The transaction header is on row 7 (`Date, Description, Amount, Running Bal.`) and debits are negative while credits are positive.
+- Bank of America statement dates are `M/D/YYYY` (no leading zeros). Include `1/2/2006` in `date_formats`. The first data row after the header is a beginning-balance line with no amount; skip row 8.
+
 ## Amount Normalization
 
 - `expenses_negative`: expenses become negative, income positive.

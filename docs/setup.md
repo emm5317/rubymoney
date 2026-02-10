@@ -7,6 +7,7 @@
 - Go toolchain installed.
 - WiX Toolset installed for MSI builds.
 - MinGW installed for CGO builds (SQLite migration tooling).
+- llama.cpp CLI installed for local LLM suggestions (optional).
 
 ## Verified Tooling (Windows)
 
@@ -60,6 +61,49 @@ migrate -version
 - Secrets: `%LOCALAPPDATA%\BudgetApp\secrets\`
 - CSV import folder: `%USERPROFILE%\Downloads\BudgetImports`
 
+## Local LLM Suggestions (Optional)
+
+BudgetExcel uses the `llama.cpp` CLI for local category suggestions. The service does not bundle the runtime or model.
+
+### Install llama.cpp CLI (Windows)
+
+1. Download a prebuilt `llama.cpp` release for Windows.
+2. Extract it and add the folder containing `llama-cli.exe` to your `PATH`.
+
+### Provide a GGUF Model
+
+Download or place a quantized GGUF model locally (for example, `C:\Models\budget.gguf`).
+
+### Required Environment Variables
+
+Set these before starting `budgetd`:
+
+- `LLM_ENABLED=true`
+- `LLM_RUNTIME=llama_cpp`
+- `LLM_MODEL_PATH=C:\Models\budget.gguf`
+
+### Optional Environment Variables
+
+- `LLM_TIMEOUT_MS=2000`
+- `LLM_MAX_CONCURRENCY=1`
+- `LLM_TEMPERATURE=0.0`
+- `LLM_CACHE_TTL_HOURS=720`
+- `LLM_MIN_CONFIDENCE=0.70`
+- `LLM_SYNC_MAX=20`
+- `LLM_RETRY_MAX=2`
+- `LLM_POLL_INTERVAL_MS=1500`
+
+### PowerShell Example
+
+```powershell
+$env:LLM_ENABLED = "true"
+$env:LLM_RUNTIME = "llama_cpp"
+$env:LLM_MODEL_PATH = "C:\Models\budget.gguf"
+$env:PATH = "$env:PATH;C:\Tools\llama.cpp"
+```
+
+Restart `budgetd` after setting environment variables.
+
 ## CSV Mapping Templates
 
 Per-bank template mappings live in `config/csv_mappings/`. Copy the needed files to:
@@ -74,6 +118,15 @@ Per-bank template mappings live in `config/csv_mappings/`. Copy the needed files
 - `sync_since_days` default `180`
 - `csv_import_folder` default `%USERPROFILE%\Downloads\BudgetImports`
 - `amount_convention` `expenses_negative` or `expenses_positive`
+- Optional (reference only, not consumed automatically):
+- `llm_enabled` set `true` or `false`
+- `llm_model_path` full path to GGUF model
+- `llm_runtime` default `llama_cpp`
+- `llm_timeout_ms` default `2000`
+- `llm_max_concurrency` default `1`
+- `llm_temperature` default `0.0`
+- `llm_cache_ttl_hours` default `720`
+- `llm_min_confidence` default `0.70`
 
 ## Service Bindings
 

@@ -1,9 +1,11 @@
 package api
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"budgetexcel/service/internal/connectors/csv"
@@ -11,6 +13,7 @@ import (
 	"budgetexcel/service/internal/logging"
 	"budgetexcel/service/internal/models"
 	"budgetexcel/service/internal/rules"
+	"budgetexcel/service/internal/suggest"
 	syncer "budgetexcel/service/internal/sync"
 
 	"github.com/gofiber/fiber/v2"
@@ -18,10 +21,11 @@ import (
 )
 
 type API struct {
-	DB      *sql.DB
-	Started time.Time
-	Version string
-	DBPath  string
+	DB          *sql.DB
+	Started     time.Time
+	Version     string
+	DBPath      string
+	Suggestions *suggest.Orchestrator
 }
 
 func RegisterRoutes(app *fiber.App, api *API) {
@@ -31,6 +35,9 @@ func RegisterRoutes(app *fiber.App, api *API) {
 	app.Post("/v1/rules/apply", api.rulesApply)
 	app.Post("/v1/overrides/import", api.overridesImport)
 	app.Get("/v1/transactions", api.transactions)
+	app.Post("/v1/categories/suggest", api.suggestCategories)
+	app.Post("/v1/transactions/:id/suggestion/accept", api.suggestionAccept)
+	app.Post("/v1/transactions/:id/suggestion/reject", api.suggestionReject)
 	app.Post("/v1/sync", api.sync)
 }
 
@@ -213,13 +220,163 @@ func (a *API) transactions(c *fiber.Ctx) error {
 	if since == "" {
 		return writeError(c, fiber.StatusBadRequest, "missing_since", "query parameter 'since' is required", nil)
 	}
+	includeSuggestions := strings.ToLower(c.Query("include_suggestions")) == "true"
 
-	txns, err := db.ListTransactionsSince(a.DB, since)
+	txns, err := db.ListTransactionsSince(a.DB, since, includeSuggestions)
 	if err != nil {
 		return writeError(c, fiber.StatusInternalServerError, "transactions_failed", "failed to load transactions", err.Error())
 	}
 
 	return c.JSON(fiber.Map{"transactions": txns})
+}
+
+type suggestCategoriesRequest struct {
+	TxnIDs    []string                   `json:"txn_ids"`
+	Mode      string                     `json:"mode"`
+	Categories []suggest.CategoryAllowList `json:"categories"`
+}
+
+type suggestCategoriesResponse struct {
+	Status      string                       `json:"status"`
+	Mode        string                       `json:"mode"`
+	Enqueued    int                          `json:"enqueued,omitempty"`
+	Suggestions []suggestResponse            `json:"suggestions,omitempty"`
+}
+
+type suggestResponse struct {
+	TxnID       string  `json:"txn_id"`
+	Status      string  `json:"status"`
+	Category    string  `json:"category,omitempty"`
+	Subcategory string  `json:"subcategory,omitempty"`
+	Confidence  float64 `json:"confidence,omitempty"`
+	ModelID     string  `json:"model_id,omitempty"`
+	ReasonCode  string  `json:"reason_code,omitempty"`
+}
+
+func (a *API) suggestCategories(c *fiber.Ctx) error {
+	if a.Suggestions == nil {
+		return writeError(c, fiber.StatusServiceUnavailable, "suggestions_unavailable", "suggestions are not configured", nil)
+	}
+
+	var req suggestCategoriesRequest
+	if err := c.BodyParser(&req); err != nil {
+		return writeError(c, fiber.StatusBadRequest, "invalid_body", "invalid JSON body", err.Error())
+	}
+	if len(req.TxnIDs) == 0 {
+		return writeError(c, fiber.StatusBadRequest, "empty_txn_ids", "txn_ids is required", nil)
+	}
+	if len(req.Categories) == 0 {
+		return writeError(c, fiber.StatusBadRequest, "missing_categories", "categories allow-list is required", nil)
+	}
+	mode := strings.ToLower(strings.TrimSpace(req.Mode))
+	if mode == "" {
+		mode = "async"
+	}
+
+	if mode == "sync" {
+		cfg := a.Suggestions
+		if len(req.TxnIDs) > cfg.Config().SyncMaxCount {
+			return writeError(c, fiber.StatusBadRequest, "too_many_txns", "sync mode is limited to a small batch", nil)
+		}
+		results, err := a.Suggestions.SuggestSync(context.Background(), req.TxnIDs, req.Categories)
+		if err != nil {
+			return writeError(c, fiber.StatusInternalServerError, "suggest_sync_failed", "failed to generate suggestions", err.Error())
+		}
+		resp := suggestCategoriesResponse{
+			Status:      "ok",
+			Mode:        "sync",
+			Suggestions: mapSuggestResults(results),
+		}
+		return c.JSON(resp)
+	}
+
+	if mode != "async" {
+		return writeError(c, fiber.StatusBadRequest, "invalid_mode", "mode must be async or sync", nil)
+	}
+
+	count, err := a.Suggestions.Enqueue(req.TxnIDs, req.Categories)
+	if err != nil {
+		return writeError(c, fiber.StatusInternalServerError, "suggest_enqueue_failed", "failed to enqueue suggestions", err.Error())
+	}
+	return c.JSON(suggestCategoriesResponse{Status: "ok", Mode: "async", Enqueued: count})
+}
+
+type suggestionAcceptRequest struct {
+	Category    string `json:"category"`
+	Subcategory string `json:"subcategory"`
+}
+
+func (a *API) suggestionAccept(c *fiber.Ctx) error {
+	txnID := c.Params("id")
+	if txnID == "" {
+		return writeError(c, fiber.StatusBadRequest, "missing_txn_id", "transaction id is required", nil)
+	}
+
+	var req suggestionAcceptRequest
+	if len(c.Body()) > 0 {
+		if err := c.BodyParser(&req); err != nil {
+			return writeError(c, fiber.StatusBadRequest, "invalid_body", "invalid JSON body", err.Error())
+		}
+	}
+
+	ctxData, ok, err := db.GetSuggestionContext(a.DB, txnID)
+	if err != nil {
+		return writeError(c, fiber.StatusInternalServerError, "suggestion_load_failed", "failed to load transaction", err.Error())
+	}
+	if !ok {
+		return writeError(c, fiber.StatusNotFound, "txn_not_found", "transaction not found", nil)
+	}
+
+	if strings.TrimSpace(ctxData.Transaction.Category) != "" || strings.TrimSpace(ctxData.Transaction.Subcategory) != "" {
+		return writeError(c, fiber.StatusConflict, "category_present", "transaction already categorized", nil)
+	}
+
+	category := strings.TrimSpace(req.Category)
+	subcategory := strings.TrimSpace(req.Subcategory)
+	if category == "" {
+		category = ctxData.Transaction.SuggestedCategory
+	}
+	if subcategory == "" {
+		subcategory = ctxData.Transaction.SuggestedSubcategory
+	}
+	if category == "" {
+		return writeError(c, fiber.StatusBadRequest, "missing_category", "no suggestion available to accept", nil)
+	}
+
+	if err := db.UpdateTransactionCategory(a.DB, txnID, category, subcategory, "suggested"); err != nil {
+		return writeError(c, fiber.StatusInternalServerError, "suggestion_apply_failed", "failed to apply suggestion", err.Error())
+	}
+	_ = db.UpdateSuggestionStatus(a.DB, txnID, "accepted")
+
+	return c.JSON(fiber.Map{"status": "ok"})
+}
+
+func (a *API) suggestionReject(c *fiber.Ctx) error {
+	txnID := c.Params("id")
+	if txnID == "" {
+		return writeError(c, fiber.StatusBadRequest, "missing_txn_id", "transaction id is required", nil)
+	}
+
+	if err := db.UpdateSuggestionStatus(a.DB, txnID, "rejected"); err != nil {
+		return writeError(c, fiber.StatusInternalServerError, "suggestion_reject_failed", "failed to reject suggestion", err.Error())
+	}
+	return c.JSON(fiber.Map{"status": "ok"})
+}
+
+func mapSuggestResults(results []suggest.SuggestionResult) []suggestResponse {
+	out := make([]suggestResponse, 0, len(results))
+	for _, r := range results {
+		out = append(out, suggestResponse{
+			TxnID:       r.TxnID,
+			Status:      r.Status,
+			Category:    r.Category,
+			Subcategory: r.Subcategory,
+			Confidence:  r.Confidence,
+			ModelID:     r.ModelID,
+			ReasonCode:  r.ReasonCode,
+		})
+	}
+	return out
 }
 
 type syncRequest struct {

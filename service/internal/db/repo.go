@@ -90,10 +90,12 @@ ON CONFLICT(txn_id) DO UPDATE SET
 	return tx.Commit()
 }
 
-func ListTransactionsSince(db *sql.DB, since string) ([]models.Transaction, error) {
+func ListTransactionsSince(db *sql.DB, since string, includeSuggestions bool) ([]models.Transaction, error) {
 	const q = `
 SELECT txn_id, external_txn_id, account_id, posted_date, amount, payee, memo,
-       category, subcategory, category_source, pending, fingerprint, raw_ref, imported_at
+       category, subcategory, category_source,
+       suggested_category, suggested_subcategory, suggested_confidence, suggested_model_id, suggested_status, suggested_reason_code,
+       pending, fingerprint, raw_ref, imported_at
 FROM transactions
 WHERE posted_date >= ?
 ORDER BY posted_date DESC;
@@ -111,12 +113,20 @@ ORDER BY posted_date DESC;
 		var extID sql.NullString
 		var category sql.NullString
 		var subcategory sql.NullString
+		var suggestedCategory sql.NullString
+		var suggestedSubcategory sql.NullString
+		var suggestedConfidence sql.NullFloat64
+		var suggestedModelID sql.NullString
+		var suggestedStatus sql.NullString
+		var suggestedReasonCode sql.NullString
 		var rawRef sql.NullString
 		var pendingInt int
 
 		if err := rows.Scan(
 			&t.TxnID, &extID, &t.AccountID, &t.PostedDate, &t.Amount, &t.Payee, &t.Memo,
-			&category, &subcategory, &t.CategorySource, &pendingInt, &t.Fingerprint, &rawRef, &t.ImportedAt,
+			&category, &subcategory, &t.CategorySource,
+			&suggestedCategory, &suggestedSubcategory, &suggestedConfidence, &suggestedModelID, &suggestedStatus, &suggestedReasonCode,
+			&pendingInt, &t.Fingerprint, &rawRef, &t.ImportedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -130,10 +140,37 @@ ORDER BY posted_date DESC;
 		if subcategory.Valid {
 			t.Subcategory = subcategory.String
 		}
+		if suggestedCategory.Valid {
+			t.SuggestedCategory = suggestedCategory.String
+		}
+		if suggestedSubcategory.Valid {
+			t.SuggestedSubcategory = suggestedSubcategory.String
+		}
+		if suggestedConfidence.Valid {
+			t.SuggestedConfidence = suggestedConfidence.Float64
+		}
+		if suggestedModelID.Valid {
+			t.SuggestedModelID = suggestedModelID.String
+		}
+		if suggestedStatus.Valid {
+			t.SuggestedStatus = suggestedStatus.String
+		}
+		if suggestedReasonCode.Valid {
+			t.SuggestedReasonCode = suggestedReasonCode.String
+		}
 		if rawRef.Valid {
 			t.RawRef = rawRef.String
 		}
 		t.Pending = pendingInt == 1
+
+		if !includeSuggestions {
+			t.SuggestedCategory = ""
+			t.SuggestedSubcategory = ""
+			t.SuggestedConfidence = 0
+			t.SuggestedModelID = ""
+			t.SuggestedStatus = ""
+			t.SuggestedReasonCode = ""
+		}
 
 		result = append(result, t)
 	}

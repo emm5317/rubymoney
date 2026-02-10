@@ -57,3 +57,20 @@ Buttons:
 
 - Keep CSV files local; no secrets are stored in Excel.
 - If a formula shows blanks, ensure the `accounts` table has `account_id`, `display_name`, and `institution` columns.
+- Bank of America statement CSVs include summary rows before the transaction header; the mapping uses `header_row: 7` and will ignore those rows.
+- Bank of America statement dates are `M/D/YYYY` and the first data row is a beginning balance with no amount; the mapping skips that row.
+
+## LLM Suggestions (Local)
+
+Macros (run once to add UI buttons on the Transactions sheet):
+
+- `AddSuggestionButtons` adds buttons for suggesting, refreshing, applying, and rejecting.
+
+Workflow:
+
+- `Suggest Categories (Blanks)` queues local suggestions for uncategorized rows.
+- `Refresh Suggestions` pulls suggested fields into the Transactions table.
+- `Apply Suggestions` applies suggestions to selected rows (never overwrites non-empty categories).
+- `Reject Suggestion` marks selected rows as rejected.
+
+Suggestions are always local-only and never auto-applied.

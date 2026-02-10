@@ -100,6 +100,10 @@ Response:
 
 ## GET /v1/transactions?since=YYYY-MM-DD
 
+Optional query params:
+
+- `include_suggestions=true` to include suggestion fields.
+
 Response:
 
 ```json
@@ -116,6 +120,12 @@ Response:
       "category": "Food",
       "subcategory": "Coffee",
       "category_source": "rule:uuid",
+      "suggested_category": "Food",
+      "suggested_subcategory": "Coffee",
+      "suggested_confidence": 0.8,
+      "suggested_status": "suggested",
+      "suggested_model_id": "model.gguf",
+      "suggested_reason_code": "payee_exact",
       "pending": false,
       "fingerprint": "hash",
       "raw_ref": "raw-1",
@@ -123,6 +133,71 @@ Response:
     }
   ]
 }
+```
+
+## POST /v1/categories/suggest
+
+Request:
+
+```json
+{
+  "txn_ids": ["uuid-1", "uuid-2"],
+  "mode": "async",
+  "categories": [
+    {"name": "Food", "subcategories": ["Groceries", "Dining"]},
+    {"name": "Transport", "subcategories": ["Gas", "Rideshare"]}
+  ]
+}
+```
+
+Response (async):
+
+```json
+{ "status": "ok", "mode": "async", "enqueued": 2 }
+```
+
+Response (sync):
+
+```json
+{
+  "status": "ok",
+  "mode": "sync",
+  "suggestions": [
+    {
+      "txn_id": "uuid-1",
+      "status": "suggested",
+      "category": "Food",
+      "subcategory": "Groceries",
+      "confidence": 0.8,
+      "model_id": "model.gguf",
+      "reason_code": "payee_exact"
+    }
+  ]
+}
+```
+
+## POST /v1/transactions/{id}/suggestion/accept
+
+Request body (optional):
+
+```json
+{ "category": "Food", "subcategory": "Groceries" }
+```
+
+If omitted, the service uses the suggested fields.
+
+Response:
+
+```json
+{ "status": "ok" }
+```
+
+## POST /v1/transactions/{id}/suggestion/reject
+
+Response:
+
+```json
+{ "status": "ok" }
 ```
 
 ## POST /v1/sync

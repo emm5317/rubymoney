@@ -160,6 +160,25 @@ Public Sub WriteTransactionsFromJson(json As String)
         rows(i, headers("fingerprint")) = JsonValue(obj, "fingerprint")
         rows(i, headers("imported_at")) = JsonValue(obj, "imported_at")
         rows(i, headers("raw_ref")) = JsonValue(obj, "raw_ref")
+
+        If headers.Exists("suggested_category") Then
+            rows(i, headers("suggested_category")) = JsonValue(obj, "suggested_category")
+        End If
+        If headers.Exists("suggested_subcategory") Then
+            rows(i, headers("suggested_subcategory")) = JsonValue(obj, "suggested_subcategory")
+        End If
+        If headers.Exists("suggested_confidence") Then
+            rows(i, headers("suggested_confidence")) = Val(JsonValue(obj, "suggested_confidence"))
+        End If
+        If headers.Exists("suggested_status") Then
+            rows(i, headers("suggested_status")) = JsonValue(obj, "suggested_status")
+        End If
+        If headers.Exists("suggested_model_id") Then
+            rows(i, headers("suggested_model_id")) = JsonValue(obj, "suggested_model_id")
+        End If
+        If headers.Exists("suggested_reason_code") Then
+            rows(i, headers("suggested_reason_code")) = JsonValue(obj, "suggested_reason_code")
+        End If
     Next i
 
     If tbl.DataBodyRange Is Nothing Then

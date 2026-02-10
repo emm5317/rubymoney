@@ -232,7 +232,9 @@ Public Function JsonObjectsArray(json As String, arrayName As String) As Collect
     For i = pos + 1 To Len(json)
         c = Mid$(json, i, 1)
         If c = """" Then
-            inString = Not inString
+            If Not IsEscapedQuote(json, i) Then
+                inString = Not inString
+            End If
         End If
         If inString Then
             GoTo continueLoop
@@ -255,6 +257,17 @@ continueLoop:
     Next i
 
     Set JsonObjectsArray = results
+End Function
+
+Private Function IsEscapedQuote(text As String, pos As Long) As Boolean
+    Dim i As Long
+    Dim count As Long
+    i = pos - 1
+    Do While i >= 1 And Mid$(text, i, 1) = "\"
+        count = count + 1
+        i = i - 1
+    Loop
+    IsEscapedQuote = (count Mod 2 = 1)
 End Function
 
 Public Function UtcNowIso() As String

@@ -33,6 +33,12 @@ CREATE TABLE transactions (
   category TEXT NULL,
   subcategory TEXT NULL,
   category_source TEXT NOT NULL,
+  suggested_category TEXT NULL,
+  suggested_subcategory TEXT NULL,
+  suggested_confidence REAL NULL,
+  suggested_model_id TEXT NULL,
+  suggested_status TEXT NOT NULL DEFAULT 'none',
+  suggested_reason_code TEXT NULL,
   raw_ref TEXT NULL,
   imported_at TEXT NOT NULL,
   FOREIGN KEY (account_id) REFERENCES accounts(account_id)
@@ -92,6 +98,43 @@ CREATE TABLE raw_blobs (
   content_type TEXT NOT NULL,
   payload BLOB NOT NULL,
   created_at TEXT NOT NULL
+);
+
+CREATE TABLE txn_category_suggestions (
+  id INTEGER PRIMARY KEY,
+  txn_id TEXT NOT NULL,
+  model_id TEXT NULL,
+  status TEXT NOT NULL,
+  top_category TEXT NULL,
+  subcategory TEXT NULL,
+  confidence REAL NULL,
+  latency_ms INTEGER NULL,
+  prompt_version TEXT NOT NULL,
+  created_at DATETIME NOT NULL,
+  FOREIGN KEY (txn_id) REFERENCES transactions(txn_id)
+);
+
+CREATE TABLE txn_suggestion_jobs (
+  job_id INTEGER PRIMARY KEY,
+  txn_id TEXT NOT NULL,
+  status TEXT NOT NULL,
+  attempts INTEGER NOT NULL,
+  last_error TEXT NULL,
+  categories_json TEXT NOT NULL,
+  prompt_version TEXT NOT NULL,
+  created_at DATETIME NOT NULL,
+  FOREIGN KEY (txn_id) REFERENCES transactions(txn_id)
+);
+
+CREATE TABLE txn_suggestion_cache (
+  cache_key TEXT PRIMARY KEY,
+  status TEXT NOT NULL,
+  category TEXT NULL,
+  subcategory TEXT NULL,
+  confidence REAL NULL,
+  model_id TEXT NULL,
+  suggested_at DATETIME NOT NULL,
+  prompt_version TEXT NOT NULL
 );
 ```
 

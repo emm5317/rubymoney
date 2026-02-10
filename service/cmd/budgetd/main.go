@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -9,6 +10,7 @@ import (
 
 	"budgetexcel/service/internal/api"
 	"budgetexcel/service/internal/db"
+	"budgetexcel/service/internal/suggest"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -35,11 +37,22 @@ func main() {
 		Format: "${time} ${status} - ${latency} ${method} ${path}\n",
 	}))
 
+	suggestCfg := suggest.LoadConfig()
+	suggester, err := suggest.NewOrchestrator(database, suggestCfg)
+	if err != nil {
+		log.Printf("suggestions disabled: %v", err)
+	}
+
+	if suggester != nil {
+		go suggester.StartPoller(context.Background())
+	}
+
 	api.RegisterRoutes(app, &api.API{
 		DB:      database,
 		Started: time.Now(),
 		Version: version,
 		DBPath:  cfg.DBPath,
+		Suggestions: suggester,
 	})
 
 	log.Printf("budgetd listening on %s", cfg.Addr)
