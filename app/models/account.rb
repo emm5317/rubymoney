@@ -14,7 +14,7 @@ class Account < ApplicationRecord
 
   scope :by_institution, ->(inst) { where(institution: inst) }
 
-  def display_balance
+  def balance
     current_balance_cents / 100.0
   end
 end

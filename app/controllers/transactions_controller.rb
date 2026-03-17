@@ -2,10 +2,11 @@ class TransactionsController < ApplicationController
   before_action :authenticate_user!
 
   def index
-    @transactions = Transaction.joins(:account)
+    scope = Transaction.joins(:account)
       .where(accounts: { user_id: current_user.id })
       .includes(:account, :category, :tags)
       .recent
+    @pagy, @transactions = pagy(scope)
   end
 
   def show
@@ -14,9 +15,11 @@ class TransactionsController < ApplicationController
 
   def new
     @transaction = Transaction.new
+    @accounts = current_user.accounts
   end
 
   def create
+    @accounts = current_user.accounts
     @transaction = Transaction.new(transaction_params)
     if @transaction.save
       redirect_to transactions_path, notice: "Transaction created."
@@ -27,10 +30,12 @@ class TransactionsController < ApplicationController
 
   def edit
     @transaction = find_transaction
+    @accounts = current_user.accounts
   end
 
   def update
     @transaction = find_transaction
+    @accounts = current_user.accounts
     if @transaction.update(transaction_params)
       redirect_to @transaction, notice: "Transaction updated."
     else
@@ -45,11 +50,12 @@ class TransactionsController < ApplicationController
   end
 
   def uncategorized
-    @transactions = Transaction.joins(:account)
+    scope = Transaction.joins(:account)
       .where(accounts: { user_id: current_user.id })
       .uncategorized
       .includes(:account)
       .recent
+    @pagy, @transactions = pagy(scope)
   end
 
   def categorize
@@ -96,7 +102,7 @@ class TransactionsController < ApplicationController
   def transaction_params
     params.require(:transaction).permit(
       :account_id, :category_id, :date, :posted_date, :description,
-      :amount_cents, :transaction_type, :status, :memo, :source_type,
+      :amount, :amount_cents, :transaction_type, :status, :memo, :source_type,
       tag_ids: []
     )
   end

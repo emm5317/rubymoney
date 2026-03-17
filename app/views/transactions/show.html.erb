@@ -3,7 +3,7 @@
     <h1 class="text-2xl font-bold text-gray-900">Transaction Detail</h1>
     <div class="flex space-x-3">
       <%= link_to "Edit", edit_transaction_path(@transaction), class: "inline-flex items-center px-4 py-2 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700" %>
-      <%= link_to "Delete", transaction_path(@transaction), method: :delete, data: { turbo_confirm: "Are you sure?" }, class: "inline-flex items-center px-4 py-2 bg-red-600 text-white font-medium rounded-md hover:bg-red-700" %>
+      <%= button_to "Delete", transaction_path(@transaction), method: :delete, data: { turbo_confirm: "Are you sure?" }, class: "inline-flex items-center px-4 py-2 bg-red-600 text-white font-medium rounded-md hover:bg-red-700" %>
     </div>
   </div>
 

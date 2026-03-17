@@ -29,12 +29,16 @@ class Transaction < ApplicationRecord
   scope :tagged_with, ->(tag) { joins(:tags).where(tags: { id: tag }) }
   scope :recent, -> { order(date: :desc) }
 
-  def display_amount
+  def amount
     amount_cents / 100.0
   end
 
+  def amount=(val)
+    self.amount_cents = (val.to_f * 100).round
+  end
+
   def formatted_amount
-    "$#{'%.2f' % display_amount.abs}"
+    "$#{'%.2f' % amount.abs}"
   end
 
   private

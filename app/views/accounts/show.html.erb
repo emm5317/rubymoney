@@ -44,7 +44,7 @@
         </tr>
       </thead>
       <tbody class="bg-white divide-y divide-gray-200">
-        <% @account.transactions.order(date: :desc).limit(20).each_with_index do |transaction, index| %>
+        <% @recent_transactions.each_with_index do |transaction, index| %>
           <tr class="<%= index.even? ? 'bg-white' : 'bg-gray-50' %>">
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= transaction.date.strftime("%b %d, %Y") %></td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
