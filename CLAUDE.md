@@ -1,45 +1,154 @@
-# Finance Reconciler
+# Finance Reconciler — CLAUDE.md
 
-Personal finance app built with Rails 7.2, PostgreSQL, Hotwire (Turbo + Stimulus), good_job, Devise.
+## What This Is
 
-## Architecture
-- Import pipeline uses adapter pattern: `app/services/importers/`
-- Each bank/file format has its own adapter implementing `BaseAdapter#parse`
-- Supports CSV, OFX/QFX, and PDF imports
-- Smart import preview: parsed data shown for review before committing
-- ImportProfile model learns column mappings, date formats, and description corrections per account
-- All amounts stored as integer cents (amount_cents), never floats
-- Deduplication via SHA256 fingerprint (CSV/PDF) or FITID (OFX/QFX)
-- Categorization via priority-ordered rules in `Categorizer` service
-- Flexible tagging system via has_many :through (TransactionTag uses `financial_transaction` association name to avoid AR conflict)
-- Transfer detection: auto-matches inter-account transfers, excludes from income/expense totals
-- Per-month budgets in dedicated `budgets` table
-- Background jobs via good_job (PostgreSQL-backed, no Redis)
-- Authentication via Devise (single user)
-- Account balance tracking and net worth over time
+Personal finance app: import bank/credit card statements, categorize transactions, track budgets, view dashboards. Single-user, self-hosted.
+
+**Stack:** Rails 7.2 · Ruby 3.3 · PostgreSQL 16 · Hotwire (Turbo + Stimulus) · Tailwind CSS · good_job · Devise · Chart.js · Pagy
+
+## Project Status
+
+**Phase 1 complete** — Foundation (models, migrations, controllers, views, auth, seeds, test setup). See BUILD_PLAN.md for full roadmap.
+
+**Not yet built:** Import pipeline (services/adapters), Categorizer service, Chart.js dashboards, PDF import, transfer matching service, recurring detection, export.
+
+## Key Commands
+
+```bash
+bin/rails server                 # Start dev server (good_job runs inline)
+bin/rails db:seed                # Seed default categories + dev user
+bundle exec rspec                # Run test suite
+RAILS_ENV=test bin/rails db:prepare  # Prepare test database
+```
+
+**Dev login:** admin@example.com / password123
+**Job dashboard:** http://localhost:3000/good_job (development only)
+
+## Architecture Rules
+
+### Money
+- ALL monetary values are integer cents (`amount_cents`, `balance_cents`, `current_balance_cents`). Never use floats for storage.
+- `Transaction#amount` and `Account#balance` are virtual accessors that convert cents to dollars for display. Forms submit via `amount` (dollars) which the setter converts to cents.
+
+### Naming Conflicts with ActiveRecord
+- `TransactionTag` uses `belongs_to :financial_transaction` (not `:transaction`) — AR reserves `#transaction`.
+- `Rule#match_field` enum uses `amount_field` (not `amount`) — AR reserves `#amount` in some contexts.
+- When adding new models/associations, check for AR method name conflicts.
+
+### Import Pipeline (to be built)
+- Adapter pattern: `app/services/importers/base_adapter.rb` defines the interface.
+- Each format (CSV, OFX, PDF) gets its own adapter implementing `#parse`.
+- Deduplication: SHA256 fingerprint for CSV/PDF, FITID for OFX/QFX.
+- Smart preview: ImportProfile learns column mappings, date formats, description corrections per account+institution.
+
+### Categorization (to be built)
+- `Categorizer` service applies `Rule` records in priority order (highest priority wins).
+- Rules match on `description`, `normalized_desc`, or `amount_field` with types: `contains`, `exact`, `starts_with`, `regex`, `gt`, `lt`, `between`.
+
+### Background Jobs
+- good_job with PostgreSQL backend. No Redis anywhere.
+- Imports will run as background jobs with Turbo Stream progress updates.
+- `good_job` runs inline in development (no separate process needed).
+
+## Data Model Quick Reference
+
+```
+User -< Account -< Transaction >- Category
+                      |    |           |
+                      |    |       Budget (per month)
+                      |    |
+                      |    >- TransactionTag >- Tag
+                      |
+                  Import    ImportProfile (learns per account)
+
+Transaction.transfer_pair_id -> Transaction (self-ref)
+Account -< AccountBalance (historical snapshots)
+```
+
+### Key Scopes on Transaction
+- `.uncategorized` — `category_id IS NULL`
+- `.non_transfer` — `is_transfer = false`
+- `.for_month(date)` — within calendar month
+- `.for_date_range(start, end)` — date range
+- `.tagged_with(tag)` — by tag id
+- `.debits` / `.credits` — by transaction type
+- `.recent` — `ORDER BY date DESC`
+
+### Key Scopes on Other Models
+- `Category.sorted` — by position
+- `Category.top_level` — no parent
+- `Rule.enabled` / `Rule.by_priority`
+- `Tag.sorted` — by name
+- `Budget.for_month(month, year)` / `Budget.for_date(date)`
+- `AccountBalance.chronological` / `.recent_first`
 
 ## Conventions
-- Service objects in `app/services/`
-- No API mode — full Rails with Hotwire
-- Turbo Frames for partial updates, Stimulus for JS behavior
-- Chart.js rendered via Stimulus controllers (not Chartkick)
-- RSpec for testing, FactoryBot for fixtures
-- Tailwind CSS for styling
-- Pagy for pagination
 
-## Key scopes
-- `Transaction.uncategorized` — no category assigned
-- `Transaction.non_transfer` — excludes inter-account transfers
-- `Transaction.for_month(date)` — transactions within a calendar month
-- `Transaction.tagged_with(tag)` — filtered by tag
+### Code Organization
+- **Service objects** go in `app/services/`. Import adapters in `app/services/importers/`.
+- **No API mode** — full Rails with server-rendered HTML + Hotwire for interactivity.
+- **Turbo Frames** for partial page updates (inline editing, modal-like flows).
+- **Stimulus controllers** for JS behavior (charts, form enhancements). No React/Vue.
+- **Chart.js** rendered via Stimulus controllers (not Chartkick).
 
-## Key commands
-- `bin/rails server` — start dev server (good_job runs inline in dev by default)
-- `bin/rails db:seed` — seed default categories and dev user
-- `bundle exec rspec` — run tests
-- `GoodJob::Engine` mounted at `/good_job` in development for job dashboard
-- Dev login: admin@example.com / password123
+### Controllers
+- All controllers require `authenticate_user!`.
+- Transaction queries always scope through `current_user` via: `Transaction.joins(:account).where(accounts: { user_id: current_user.id })`.
+- Account queries scope via `current_user.accounts`.
+- Categories, rules, tags are global (single-user app) — no user scoping needed.
+- Budgets are global (single-user) — document if multi-user is added later.
+- Forms that reference accounts must pass `@accounts = current_user.accounts` from controller (never `Account.all` in views).
 
-## Known conventions
-- `TransactionTag` uses `belongs_to :financial_transaction` (not `:transaction`) to avoid AR method conflict
-- Rule `match_field` enum uses `amount_field` (not `amount`) for same reason
+### Views
+- **Tailwind CSS** — consistent card layout: `max-w-7xl mx-auto px-4 py-8`, white bg with shadow.
+- Tables use alternating row colors, indigo action links.
+- Delete actions use `button_to` (not `link_to method: :delete`) for Turbo compatibility.
+- Pagy pagination via `<%== pagy_nav(@pagy) %>` — include on any list that could grow.
+
+### Testing
+- **RSpec** with FactoryBot. Factories in `spec/factories/`.
+- Devise test helpers included for request and system specs.
+- Model specs exist for all 10 models. Controller/request/system specs not yet written.
+- Run with `bundle exec rspec`. Test DB: `budgetexcel_test`.
+
+### Database
+- PostgreSQL only. No SQLite, no MySQL.
+- All migrations use `bigint` for monetary columns.
+- Deduplication index: `[account_id, source_fingerprint]` unique on transactions.
+- Budget uniqueness: `[category_id, month, year]`.
+- ImportProfile uniqueness: `[account_id, institution]`.
+
+## File Map
+
+```
+app/
+  controllers/    # 9 controllers (application, dashboard, accounts, transactions,
+                  #   categories, budgets, rules, tags, imports)
+  models/         # 11 models (user, account, transaction, category, budget,
+                  #   tag, transaction_tag, rule, import, import_profile, account_balance)
+  views/          # 7 resource dirs + layouts + dashboard + shared
+  services/       # (empty — Phase 2 builds import adapters + categorizer)
+  helpers/        # ApplicationHelper with Pagy::Frontend
+  jobs/           # ApplicationJob base class (specific jobs Phase 2+)
+  javascript/     # Importmap + Stimulus (controllers Phase 4+)
+config/
+  routes.rb       # All routes defined, some controller actions are stubs
+  initializers/   # devise.rb, pagy.rb, standard Rails
+db/
+  schema.rb       # 12 tables (including good_job tables)
+  seeds.rb        # 15 categories + dev user
+  migrate/        # All Phase 1 migrations
+spec/
+  models/         # 10 model specs
+  factories/      # 10 factory files
+```
+
+## What NOT to Do
+
+- Never store money as floats or decimals. Always integer cents.
+- Never use `Account.all` or `Transaction.all` in views — scope to current_user.
+- Never use `link_to ... method: :delete` — use `button_to` for Turbo.
+- Never add `:transaction` as an association name — AR conflict. Use `:financial_transaction`.
+- Never add `:amount` as an enum value — AR conflict. Use `:amount_field`.
+- Never require Redis — use PostgreSQL-backed good_job for everything.
+- Never add Chartkick — Chart.js via Stimulus controllers only.

@@ -1,24 +1,60 @@
-# README
+# Finance Reconciler
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+Personal finance app for importing bank statements, categorizing transactions, tracking budgets, and visualizing spending. Built with Rails 7.2, PostgreSQL, and Hotwire.
 
-Things you may want to cover:
+## Requirements
 
-* Ruby version
+- Ruby 3.3+
+- PostgreSQL 16+
+- Node.js (for Tailwind CSS builds)
 
-* System dependencies
+## Setup
 
-* Configuration
+```bash
+# Clone and install dependencies
+git clone <repo-url> && cd budgetexcel
+bundle install
 
-* Database creation
+# Create and seed database
+bin/rails db:create db:migrate db:seed
 
-* Database initialization
+# Start the dev server
+bin/dev
+# Or without Procfile: bin/rails server
+```
 
-* How to run the test suite
+## Development
 
-* Services (job queues, cache servers, search engines, etc.)
+```bash
+bin/rails server          # Rails + good_job (inline in dev)
+bundle exec rspec         # Run test suite
+bin/rails db:seed         # Seed categories + dev user
+```
 
-* Deployment instructions
+**Dev login:** admin@example.com / password123
 
-* ...
+**Job dashboard:** http://localhost:3000/good_job
+
+## Stack
+
+| Layer | Choice |
+|-------|--------|
+| Framework | Rails 7.2 |
+| Database | PostgreSQL 16 |
+| Frontend | Hotwire (Turbo + Stimulus) |
+| Styling | Tailwind CSS |
+| Auth | Devise |
+| Background Jobs | good_job (PostgreSQL-backed) |
+| Charts | Chart.js via Stimulus |
+| Pagination | Pagy |
+| Testing | RSpec + FactoryBot |
+
+## Project Documentation
+
+- **CLAUDE.md** — Architecture, conventions, and coding guidelines for AI-assisted development
+- **SOUL.md** — Design philosophy, decision rationale, and quality standards
+- **BUILD_PLAN.md** — Detailed phased implementation roadmap
+
+## License
+
+Private — not for redistribution.
