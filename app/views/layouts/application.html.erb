@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html class="h-full bg-gray-50">
+  <head>
+    <title><%= content_for(:title) || "Finance Reconciler" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= yield :head %>
+
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icon.png">
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body class="h-full">
+    <% if user_signed_in? %>
+      <nav class="bg-indigo-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex items-center justify-between h-16">
+            <div class="flex items-center space-x-4">
+              <%= link_to "Finance Reconciler", authenticated_root_path, class: "text-white font-bold text-lg" %>
+              <%= link_to "Accounts", accounts_path, class: "text-indigo-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium" %>
+              <%= link_to "Transactions", transactions_path, class: "text-indigo-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium" %>
+              <%= link_to "Categories", categories_path, class: "text-indigo-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium" %>
+              <%= link_to "Rules", rules_path, class: "text-indigo-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium" %>
+              <%= link_to "Tags", tags_path, class: "text-indigo-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium" %>
+            </div>
+            <div class="flex items-center space-x-4">
+              <span class="text-indigo-200 text-sm"><%= current_user.email %></span>
+              <%= button_to "Sign Out", destroy_user_session_path, method: :delete, class: "text-indigo-200 hover:text-white text-sm font-medium" %>
+            </div>
+          </div>
+        </div>
+      </nav>
+    <% end %>
+
+    <% if notice.present? %>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+        <div class="rounded-md bg-green-50 p-4">
+          <p class="text-sm text-green-800"><%= notice %></p>
+        </div>
+      </div>
+    <% end %>
+
+    <% if alert.present? %>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+        <div class="rounded-md bg-red-50 p-4">
+          <p class="text-sm text-red-800"><%= alert %></p>
+        </div>
+      </div>
+    <% end %>
+
+    <main>
+      <%= yield %>
+    </main>
+  </body>
+</html>

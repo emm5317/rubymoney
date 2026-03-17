@@ -1,0 +1,29 @@
+<div class="max-w-7xl mx-auto px-4 py-8">
+  <h1 class="text-2xl font-bold text-gray-900 mb-6">Import: <%= @import.file_name %></h1>
+  <div class="bg-white shadow rounded-lg p-6 space-y-4">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div>
+        <p class="text-sm text-gray-500">Status</p>
+        <p class="font-semibold"><%= @import.status.titleize %></p>
+      </div>
+      <div>
+        <p class="text-sm text-gray-500">Total Rows</p>
+        <p class="font-semibold"><%= @import.total_rows %></p>
+      </div>
+      <div>
+        <p class="text-sm text-gray-500">Imported</p>
+        <p class="font-semibold text-green-600"><%= @import.imported_count %></p>
+      </div>
+      <div>
+        <p class="text-sm text-gray-500">Skipped</p>
+        <p class="font-semibold text-yellow-600"><%= @import.skipped_count %></p>
+      </div>
+    </div>
+    <% if @import.completed? %>
+      <div class="pt-4 border-t">
+        <%= button_to "Rollback Import", rollback_account_import_path(@account, @import), method: :post, class: "px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700", data: { turbo_confirm: "This will delete all transactions from this import. Are you sure?" } %>
+      </div>
+    <% end %>
+  </div>
+  <%= link_to "Back to Imports", account_imports_path(@account), class: "mt-4 inline-block text-indigo-600 hover:text-indigo-900" %>
+</div>

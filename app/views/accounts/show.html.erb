@@ -1,0 +1,66 @@
+<div class="max-w-7xl mx-auto px-4 py-8">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-900"><%= @account.name %></h1>
+    <div class="flex space-x-3">
+      <%= link_to "Import Transactions", new_account_import_path(@account), class: "inline-flex items-center px-4 py-2 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700" %>
+      <%= link_to "Edit", edit_account_path(@account), class: "inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50" %>
+    </div>
+  </div>
+
+  <div class="bg-white shadow rounded-lg p-6 mb-6">
+    <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+      <div>
+        <dt class="text-sm font-medium text-gray-500">Account Type</dt>
+        <dd class="mt-1 text-sm text-gray-900"><%= @account.account_type.titleize %></dd>
+      </div>
+      <div>
+        <dt class="text-sm font-medium text-gray-500">Institution</dt>
+        <dd class="mt-1 text-sm text-gray-900"><%= @account.institution %></dd>
+      </div>
+      <div>
+        <dt class="text-sm font-medium text-gray-500">Currency</dt>
+        <dd class="mt-1 text-sm text-gray-900"><%= @account.currency %></dd>
+      </div>
+      <div>
+        <dt class="text-sm font-medium text-gray-500">Balance</dt>
+        <dd class="mt-1 text-sm text-gray-900 font-semibold"><%= number_to_currency(@account.balance) %></dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-lg font-semibold text-gray-900">Recent Transactions</h2>
+    <%= link_to "View All Imports", account_imports_path(@account), class: "text-indigo-600 hover:text-indigo-900 text-sm" %>
+  </div>
+
+  <div class="bg-white shadow rounded-lg overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+          <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        <% @account.transactions.order(date: :desc).limit(20).each_with_index do |transaction, index| %>
+          <tr class="<%= index.even? ? 'bg-white' : 'bg-gray-50' %>">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= transaction.date.strftime("%b %d, %Y") %></td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <%= link_to transaction.description, transaction_path(transaction), class: "text-indigo-600 hover:text-indigo-900" %>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-right <%= transaction.transaction_type == 'debit' ? 'text-red-600' : 'text-green-600' %>">
+              <%= number_to_currency(transaction.amount) %>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= transaction.category&.name %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mt-4">
+    <%= link_to "Back to Accounts", accounts_path, class: "text-indigo-600 hover:text-indigo-900 text-sm" %>
+  </div>
+</div>
