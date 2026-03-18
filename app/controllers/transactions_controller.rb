@@ -11,6 +11,9 @@ class TransactionsController < ApplicationController
 
   def show
     @transaction = find_transaction
+    unless @transaction.is_transfer?
+      @transfer_candidates = TransferMatcher.new.find_candidates(@transaction, user: current_user)
+    end
   end
 
   def new
@@ -84,12 +87,17 @@ class TransactionsController < ApplicationController
 
   def link_transfer
     @transaction = find_transaction
-    head :ok
+    pair = find_transaction_by_id(params[:transfer_pair_id])
+
+    matcher = TransferMatcher.new
+    matcher.link!(@transaction, pair)
+    redirect_to @transaction, notice: "Transactions linked as transfer."
   end
 
   def unlink_transfer
     @transaction = find_transaction
-    head :ok
+    TransferMatcher.new.unlink!(@transaction)
+    redirect_to @transaction, notice: "Transfer unlinked."
   end
 
   def bulk_categorize
@@ -118,6 +126,10 @@ class TransactionsController < ApplicationController
 
   def find_transaction
     user_transactions_scope.find(params[:id])
+  end
+
+  def find_transaction_by_id(id)
+    user_transactions_scope.find(id)
   end
 
   def find_transactions_by_ids(ids)

@@ -19,7 +19,7 @@
       </div>
       <div>
         <dt class="text-sm font-medium text-gray-500">Amount</dt>
-        <dd class="mt-1 text-sm font-semibold <%= @transaction.transaction_type == 'debit' ? 'text-red-600' : 'text-green-600' %>">
+        <dd class="mt-1 text-sm font-semibold <%= @transaction.debit? ? 'text-red-600' : 'text-green-600' %>">
           <%= number_to_currency(@transaction.amount) %>
         </dd>
       </div>
@@ -35,28 +35,35 @@
       </div>
       <div>
         <dt class="text-sm font-medium text-gray-500">Category</dt>
-        <dd class="mt-1 text-sm text-gray-900"><%= @transaction.category&.name || "Uncategorized" %></dd>
+        <dd class="mt-1 text-sm">
+          <% if @transaction.category %>
+            <span class="inline-flex items-center">
+              <span class="w-2 h-2 rounded-full mr-1.5" style="background-color: <%= @transaction.category.color %>;"></span>
+              <%= @transaction.category.name %>
+            </span>
+            <% if @transaction.auto_categorized? %>
+              <span class="ml-1 text-xs text-gray-400">(auto)</span>
+            <% end %>
+          <% else %>
+            <span class="text-gray-400 italic">Uncategorized</span>
+          <% end %>
+        </dd>
       </div>
       <div>
         <dt class="text-sm font-medium text-gray-500">Status</dt>
-        <dd class="mt-1">
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-            <%= case @transaction.status
-                when 'cleared' then 'bg-green-100 text-green-800'
-                when 'reconciled' then 'bg-blue-100 text-blue-800'
-                else 'bg-yellow-100 text-yellow-800'
-                end %>">
-            <%= @transaction.status.titleize %>
-          </span>
-        </dd>
+        <dd class="mt-1"><%= transaction_status_badge(@transaction.status) %></dd>
       </div>
       <div>
         <dt class="text-sm font-medium text-gray-500">Tags</dt>
         <dd class="mt-1 flex flex-wrap gap-1">
-          <% @transaction.tags.each do |tag| %>
-            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="background-color: <%= tag.color %>20; color: <%= tag.color %>;">
-              <%= tag.name %>
-            </span>
+          <% if @transaction.tags.any? %>
+            <% @transaction.tags.each do |tag| %>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="background-color: <%= tag.color %>20; color: <%= tag.color %>;">
+                <%= tag.name %>
+              </span>
+            <% end %>
+          <% else %>
+            <span class="text-gray-400 text-sm">None</span>
           <% end %>
         </dd>
       </div>
@@ -69,7 +76,43 @@
     </dl>
   </div>
 
-  <div class="mt-4">
+  <%# Transfer section %>
+  <div class="mt-6 bg-white shadow rounded-lg p-6">
+    <h2 class="text-lg font-medium text-gray-900 mb-4">Transfer</h2>
+
+    <% if @transaction.is_transfer? && @transaction.transfer_pair %>
+      <% pair = @transaction.transfer_pair %>
+      <div class="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+        <div class="text-sm">
+          <span class="font-medium"><%= pair.description %></span>
+          <span class="text-gray-500 ml-2"><%= pair.account.name %></span>
+          <span class="ml-2 <%= pair.debit? ? 'text-red-600' : 'text-green-600' %>"><%= number_to_currency(pair.amount) %></span>
+          <span class="text-gray-400 ml-2"><%= pair.date.strftime("%b %d, %Y") %></span>
+        </div>
+        <%= button_to "Unlink", unlink_transfer_transaction_path(@transaction), method: :delete, class: "px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300", data: { turbo_confirm: "Unlink this transfer pair?" } %>
+      </div>
+    <% elsif @transfer_candidates&.any? %>
+      <p class="text-sm text-gray-500 mb-3">Potential transfer matches:</p>
+      <div class="space-y-2">
+        <% @transfer_candidates.each do |candidate| %>
+          <div class="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+            <div class="text-sm">
+              <span class="font-medium"><%= candidate.description %></span>
+              <span class="text-gray-500 ml-2"><%= candidate.account.name %></span>
+              <span class="ml-2 <%= candidate.debit? ? 'text-red-600' : 'text-green-600' %>"><%= number_to_currency(candidate.amount) %></span>
+              <span class="text-gray-400 ml-2"><%= candidate.date.strftime("%b %d, %Y") %></span>
+            </div>
+            <%= button_to "Link", link_transfer_transaction_path(@transaction, transfer_pair_id: candidate.id), method: :post, class: "px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700" %>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-sm text-gray-400">No transfer matches found.</p>
+    <% end %>
+  </div>
+
+  <div class="mt-4 flex items-center space-x-4">
     <%= link_to "Back to Transactions", transactions_path, class: "text-indigo-600 hover:text-indigo-900 text-sm" %>
+    <%= link_to "Create Rule", create_rule_transaction_path(@transaction), class: "text-indigo-600 hover:text-indigo-900 text-sm", data: { turbo_method: :post } %>
   </div>
 </div>
