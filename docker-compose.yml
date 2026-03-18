@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   db:
     image: postgres:16-alpine
@@ -31,7 +29,7 @@ services:
     environment:
       RAILS_ENV: production
       DATABASE_URL: postgres://rubymoney:rubymoney@db:5432/rubymoney_development
-      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY}
+      RAILS_MASTER_KEY: 7aa1034a6dedf564a32b521a6006fb18
       RAILS_SERVE_STATIC_FILES: "true"
       RAILS_LOG_TO_STDOUT: "true"
       PORT: "3030"
