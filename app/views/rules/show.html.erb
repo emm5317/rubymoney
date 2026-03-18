@@ -3,27 +3,58 @@
     <h1 class="text-2xl font-bold text-gray-900">Rule Detail</h1>
     <div class="flex space-x-3">
       <%= link_to "Edit", edit_rule_path(@rule), class: "inline-flex items-center px-4 py-2 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700" %>
-      <%= link_to "Delete", rule_path(@rule), method: :delete, data: { turbo_confirm: "Are you sure?" }, class: "inline-flex items-center px-4 py-2 bg-red-600 text-white font-medium rounded-md hover:bg-red-700" %>
+      <%= button_to "Delete", rule_path(@rule), method: :delete, data: { turbo_confirm: "Are you sure?" }, class: "inline-flex items-center px-4 py-2 bg-red-600 text-white font-medium rounded-md hover:bg-red-700" %>
     </div>
   </div>
 
   <div class="bg-white shadow rounded-lg p-6">
     <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
       <div>
-        <dt class="text-sm font-medium text-gray-500">Match Pattern</dt>
-        <dd class="mt-1 text-sm text-gray-900 font-mono"><%= @rule.match_pattern %></dd>
+        <dt class="text-sm font-medium text-gray-500">Match Field</dt>
+        <dd class="mt-1 text-sm text-gray-900"><%= @rule.match_field.titleize %></dd>
       </div>
       <div>
         <dt class="text-sm font-medium text-gray-500">Match Type</dt>
         <dd class="mt-1 text-sm text-gray-900"><%= @rule.match_type.titleize %></dd>
       </div>
       <div>
+        <dt class="text-sm font-medium text-gray-500">Match Value</dt>
+        <dd class="mt-1 text-sm text-gray-900 font-mono"><%= @rule.match_value %></dd>
+      </div>
+      <% if @rule.match_value_upper.present? %>
+        <div>
+          <dt class="text-sm font-medium text-gray-500">Upper Value</dt>
+          <dd class="mt-1 text-sm text-gray-900 font-mono"><%= @rule.match_value_upper %></dd>
+        </div>
+      <% end %>
+      <div>
         <dt class="text-sm font-medium text-gray-500">Category</dt>
-        <dd class="mt-1 text-sm text-gray-900"><%= @rule.category&.name %></dd>
+        <dd class="mt-1 text-sm text-gray-900">
+          <% if @rule.category %>
+            <span class="inline-flex items-center">
+              <span class="w-2.5 h-2.5 rounded-full mr-1.5" style="background-color: <%= @rule.category.color %>;"></span>
+              <%= @rule.category.name %>
+            </span>
+          <% end %>
+        </dd>
       </div>
       <div>
         <dt class="text-sm font-medium text-gray-500">Priority</dt>
         <dd class="mt-1 text-sm text-gray-900"><%= @rule.priority %></dd>
+      </div>
+      <div>
+        <dt class="text-sm font-medium text-gray-500">Status</dt>
+        <dd class="mt-1">
+          <% if @rule.enabled? %>
+            <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Enabled</span>
+          <% else %>
+            <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-500">Disabled</span>
+          <% end %>
+        </dd>
+      </div>
+      <div>
+        <dt class="text-sm font-medium text-gray-500">Apply Retroactively</dt>
+        <dd class="mt-1 text-sm text-gray-900"><%= @rule.apply_retroactive? ? "Yes" : "No" %></dd>
       </div>
     </dl>
   </div>

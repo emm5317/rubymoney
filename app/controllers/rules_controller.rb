@@ -20,7 +20,12 @@ class RulesController < ApplicationController
   def create
     @rule = Rule.new(rule_params)
     if @rule.save
-      redirect_to rules_path, notice: "Rule created."
+      if @rule.apply_retroactive?
+        count = Categorizer.new.categorize_batch(Transaction.uncategorized)
+        redirect_to rules_path, notice: "Rule created. #{count} existing transactions auto-categorized."
+      else
+        redirect_to rules_path, notice: "Rule created."
+      end
     else
       render :new, status: :unprocessable_entity
     end
