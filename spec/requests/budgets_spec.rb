@@ -37,6 +37,18 @@ RSpec.describe "Budgets", type: :request do
           post copy_previous_budgets_path(month: Date.current.month, year: Date.current.year)
         }.to change(Budget, :count).by(1)
       end
+
+      it "shows message when all budgets already exist for target month" do
+        create(:budget, category: groceries, month: Date.current.month,
+               year: Date.current.year, amount_cents: 25_000)
+        create(:budget, category: dining, month: Date.current.month,
+               year: Date.current.year, amount_cents: 15_000)
+
+        post copy_previous_budgets_path(month: Date.current.month, year: Date.current.year)
+        expect(response).to redirect_to(budgets_path)
+        follow_redirect!
+        expect(response.body).to include("already exist")
+      end
     end
 
     context "when previous month has no budgets" do

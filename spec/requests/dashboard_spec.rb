@@ -69,6 +69,14 @@ RSpec.describe "Dashboard", type: :request do
         expect(response.body).to include("Spending by Category")
         expect(response.body).to include("Groceries")
       end
+
+      it "excludes transactions from other users' accounts" do
+        other_account = create(:account, user: create(:user))
+        create(:transaction, account: other_account, transaction_type: :debit,
+               amount_cents: 999_999, date: Date.current)
+        get dashboard_path
+        expect(response.body).not_to include("$9,999.99")
+      end
     end
 
     context "period navigation" do
@@ -80,6 +88,12 @@ RSpec.describe "Dashboard", type: :request do
       it "navigates to a specific month" do
         get dashboard_path(month: 1, year: 2025)
         expect(response.body).to include("January 2025")
+      end
+
+      it "handles invalid month param gracefully" do
+        account # ensure account exists
+        get dashboard_path(month: 13, year: 2025)
+        expect(response).to have_http_status(:ok)
       end
 
       it "shows transactions only for the selected month" do
@@ -131,6 +145,15 @@ RSpec.describe "Dashboard", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("WHOLE FOODS")
       expect(response.body).to include("Groceries")
+    end
+
+    it "shows empty state when category has no transactions" do
+      empty_cat = create(:category, :dining)
+      get drilldown_dashboard_path(category_id: empty_cat.id,
+                                    month: Date.current.month,
+                                    year: Date.current.year)
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("No transactions found")
     end
   end
 end

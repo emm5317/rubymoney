@@ -7,7 +7,7 @@
 
     <div class="space-y-4">
       <% @budgets.each do |budget| %>
-        <% actual = @budget_actuals[budget.category_id] || 0 %>
+        <% actual = @category_spending[budget.category_id] || 0 %>
         <% percentage = budget.amount_cents > 0 ? (actual.to_f / budget.amount_cents * 100).round(1) : 0 %>
         <% bar_width = [percentage, 100].min %>
 

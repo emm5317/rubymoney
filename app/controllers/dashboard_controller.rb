@@ -27,9 +27,8 @@ class DashboardController < ApplicationController
     @monthly_income = trend_txns.credits.group_by_month(:date).sum(:amount_cents)
     @monthly_expenses = trend_txns.debits.group_by_month(:date).sum(:amount_cents)
 
-    # Budget vs. actual
+    # Budget vs. actual (reuse @category_spending for actuals)
     @budgets = Budget.for_month(@date.month, @date.year).includes(:category)
-    @budget_actuals = month_txns.debits.group(:category_id).sum(:amount_cents)
 
     # Tag spending (only if tagged transactions exist)
     @tag_spending = month_txns.debits
@@ -56,10 +55,10 @@ class DashboardController < ApplicationController
   private
 
   def build_date
-    Date.new(
-      (params[:year] || Date.current.year).to_i,
-      (params[:month] || Date.current.month).to_i,
-      1
-    )
+    month = (params[:month] || Date.current.month).to_i.clamp(1, 12)
+    year = (params[:year] || Date.current.year).to_i.clamp(2000, 2099)
+    Date.new(year, month, 1)
+  rescue ArgumentError
+    Date.current.beginning_of_month
   end
 end

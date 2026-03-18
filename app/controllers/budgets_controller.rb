@@ -49,8 +49,8 @@ class BudgetsController < ApplicationController
   end
 
   def copy_previous
-    target_month = (params[:month] || Date.current.month).to_i
-    target_year = (params[:year] || Date.current.year).to_i
+    target_month = (params[:month] || Date.current.month).to_i.clamp(1, 12)
+    target_year = (params[:year] || Date.current.year).to_i.clamp(2000, 2099)
 
     prev_date = Date.new(target_year, target_month, 1) - 1.month
     previous_budgets = Budget.for_month(prev_date.month, prev_date.year)

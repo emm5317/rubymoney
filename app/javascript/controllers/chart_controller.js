@@ -15,6 +15,8 @@ export default class extends Controller {
   }
 
   connect() {
+    if (this.chart) { this.chart.destroy(); this.chart = null }
+
     import("chart.js").then(({ Chart, registerables }) => {
       Chart.register(...registerables)
       const canvas = this.element.querySelector("canvas")
@@ -48,7 +50,6 @@ export default class extends Controller {
       }
 
       // Emit click events for drill-down
-      const originalOnClick = config.options?.onClick
       config.options = config.options || {}
       config.options.onClick = (evt, elements) => {
         if (elements.length > 0) {
@@ -62,6 +63,8 @@ export default class extends Controller {
       }
 
       this.chart = new Chart(canvas, config)
+    }).catch((err) => {
+      console.error("Failed to load Chart.js:", err)
     })
   }
 
