@@ -45,15 +45,15 @@
       </thead>
       <tbody class="bg-white divide-y divide-gray-200">
         <% @recent_transactions.each_with_index do |transaction, index| %>
-          <tr class="<%= index.even? ? 'bg-white' : 'bg-gray-50' %>">
+          <tr class="<%= index.even? ? 'bg-white' : 'bg-gray-50' %> hover:bg-gray-100 transition-colors">
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= transaction.date.strftime("%b %d, %Y") %></td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
               <%= link_to transaction.description, transaction_path(transaction), class: "text-indigo-600 hover:text-indigo-900" %>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-right <%= transaction.transaction_type == 'debit' ? 'text-red-600' : 'text-green-600' %>">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-right <%= transaction.debit? ? 'text-red-600' : 'text-green-600' %>">
               <%= number_to_currency(transaction.amount) %>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= transaction.category&.name %></td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm"><%= category_label(transaction.category) %></td>
           </tr>
         <% end %>
       </tbody>

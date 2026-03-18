@@ -28,7 +28,7 @@
             <% amount_cents = txn[:amount_cents].to_i %>
             <% is_debit = txn[:transaction_type].to_s == "debit" %>
             <% duplicate = @existing_fingerprints.include?(txn[:source_fingerprint]) %>
-            <tr class="<%= index.even? ? 'bg-white' : 'bg-gray-50' %> <%= duplicate ? 'opacity-50' : '' %>">
+            <tr class="<%= index.even? ? 'bg-white' : 'bg-gray-50' %> hover:bg-gray-100 transition-colors <%= duplicate ? 'opacity-50' : '' %>">
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= txn[:date] %></td>
               <td class="px-6 py-4 text-sm text-gray-900"><%= txn[:description] %></td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-right <%= is_debit ? 'text-red-600' : 'text-green-600' %>">

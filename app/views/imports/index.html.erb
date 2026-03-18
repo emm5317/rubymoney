@@ -18,7 +18,7 @@
         </thead>
         <tbody class="divide-y divide-gray-200">
           <% @imports.each_with_index do |import, index| %>
-            <tr class="<%= index.even? ? 'bg-white' : 'bg-gray-50' %>">
+            <tr class="<%= index.even? ? 'bg-white' : 'bg-gray-50' %> hover:bg-gray-100 transition-colors">
               <td class="px-6 py-4 text-sm">
                 <%= link_to import.file_name, account_import_path(@account, import), class: "text-indigo-600 hover:text-indigo-900" %>
               </td>
