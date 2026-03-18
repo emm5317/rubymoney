@@ -24,7 +24,7 @@ RAILS_ENV=test bin/rails db:prepare  # Prepare test database
 ```
 
 **Dev login:** admin@example.com / password123
-**Job dashboard:** http://localhost:3000/good_job (development only)
+**Job dashboard:** http://localhost:3030/good_job (development only)
 
 ## Architecture Rules
 
@@ -117,7 +117,7 @@ Account -< AccountBalance (historical snapshots)
 - Devise test helpers included for request and system specs.
 - Model specs for all 10 models. Service specs for CsvAdapter, Categorizer, ImportProcessor.
 - Controller/request/system specs not yet written.
-- Run with `bundle exec rspec`. Test DB: `budgetexcel_test`.
+- Run with `bundle exec rspec`. Test DB: `rubymoney_test`.
 
 ### Database
 - PostgreSQL only. No SQLite, no MySQL.

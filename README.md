@@ -4,23 +4,26 @@ Personal finance app for importing bank statements, categorizing transactions, t
 
 ## Requirements
 
-- Ruby 3.3+
-- PostgreSQL 16+
-- Node.js (for Tailwind CSS builds)
+- Docker & Docker Compose (recommended)
+- Or: Ruby 3.3+, PostgreSQL 16+
 
-## Setup
+## Quick Start (Docker)
 
 ```bash
-# Clone and install dependencies
-git clone <repo-url> && cd budgetexcel
+git clone <repo-url> && cd rubymoney
+docker compose up -d --build
+docker compose exec web bin/rails db:seed
+```
+
+App runs at **http://localhost:3030**. See [docs/docker.md](docs/docker.md) for details.
+
+## Setup (Local)
+
+```bash
+git clone <repo-url> && cd rubymoney
 bundle install
-
-# Create and seed database
 bin/rails db:create db:migrate db:seed
-
-# Start the dev server
-bin/dev
-# Or without Procfile: bin/rails server
+bin/rails server
 ```
 
 ## Development
@@ -33,7 +36,7 @@ bin/rails db:seed         # Seed categories + dev user
 
 **Dev login:** admin@example.com / password123
 
-**Job dashboard:** http://localhost:3000/good_job
+**Job dashboard:** http://localhost:3030/good_job
 
 ## Stack
 

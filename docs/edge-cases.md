@@ -1,36 +1,44 @@
 # Edge Cases
 
-## Pending -> Posted Reconciliation
+## Pending → Posted Reconciliation
 
-- If a posted txn arrives that matches a pending txn:
-- Same account
-- Same amount
-- Payee or memo similarity
-- Date within +/- 7 days
-- Update pending row to posted rather than insert new.
+- If a posted transaction arrives that matches a pending one:
+  - Same account
+  - Same amount
+  - Payee/description similarity
+  - Date within +/- 7 days
+- Update the pending row to posted rather than inserting a new record.
+- Not yet implemented — planned for Phase 4 (transfer matching service).
 
-## Dedupe Strategy
+## Deduplication Strategy
 
-- If `external_txn_id` exists: upsert by `(account_id, external_txn_id)`.
-- Else: compute `fingerprint = sha256(account_id|date|amount|normalized_payee|normalized_memo)` and upsert by `(account_id, fingerprint)`.
+- **OFX/QFX imports:** Use the FITID (Financial Transaction ID) from the file as `source_fingerprint`. Handled by `Importers::OfxAdapter`.
+- **CSV imports:** Compute `source_fingerprint = SHA256(account_id|date|amount_cents|normalized_description)`. Handled by `Importers::CsvAdapter`.
+- Unique index on `[account_id, source_fingerprint]` prevents duplicates at the database level.
+- During import preview, duplicates are flagged before confirmation so the user can review.
 
 ## Amount Sign Conventions
 
-- Support `expenses_negative` and `expenses_positive`.
-- Normalize to internal standard before hashing.
+- Support both `expenses_negative` and `expenses_positive` conventions.
+- `CsvAdapter` auto-detects: parentheses `(100.00)` treated as negative, currency symbols stripped.
+- Separate debit/credit columns are merged into a single `amount_cents` (debits negative, credits positive).
+- Amounts are normalized to cents before fingerprinting.
 
 ## Date Parsing
 
-- Use mapping-defined date format list in order.
-- Reject or quarantine rows with unparseable dates.
+- `ImportProfile` stores the learned date format per account+institution.
+- `CsvAdapter` tries common formats in order: `%m/%d/%Y`, `%Y-%m-%d`, `%d/%m/%Y`, etc.
+- Rows with unparseable dates are rejected and reported in the preview step.
 
-## Overrides Protection
+## Categorization Overrides
 
-- When applying rules, skip any txn with an override row.
-- Never overwrite `category` and `subcategory` for overridden txns.
+- When applying rules via `Categorizer`, transactions with a manually-set category are skipped by default.
+- `Rule` records are applied in priority order (highest priority wins).
+- `#apply_retroactive` only touches uncategorized transactions.
 
 ## CSV Quirks
 
-- Handle quoted commas.
-- Trim whitespace in headers.
-- Normalize payee and memo for fingerprinting.
+- Quoted commas handled by Ruby's `CSV` stdlib.
+- Leading/trailing whitespace in headers is stripped during column mapping.
+- Description and memo fields are normalized (whitespace collapsed, stripped) before fingerprinting.
+- Empty rows and header-only files are gracefully skipped.

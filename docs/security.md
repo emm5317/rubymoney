@@ -1,28 +1,44 @@
 # Security
 
-## Local-Only Operation
+## Authentication
 
-- Service binds to `127.0.0.1` only.
-- No remote listeners or network exposure.
+- **Devise** handles user authentication with bcrypt password hashing.
+- All controllers require `authenticate_user!` via `ApplicationController`.
+- Session-based auth with Rails' encrypted cookie store.
+- Single-user app — registration is via `db:seed` or Rails console, not a public sign-up form.
 
-## Secrets Handling
+## Authorization & Data Scoping
 
-- Secrets are never handled by Excel or VBA.
-- Secrets are stored using Windows DPAPI or Credential Manager.
-- Encrypted blobs stored under `%LOCALAPPDATA%\BudgetApp\secrets\`.
-- Logs and API responses must never include secrets.
+- All account queries scoped via `current_user.accounts`.
+- Transaction queries always join through accounts: `Transaction.joins(:account).where(accounts: { user_id: current_user.id })`.
+- Categories, rules, tags, and budgets are global (single-user design).
 
-## Redaction
+## Rails Security Defaults
 
-- Log entries redact tokens, account credentials, and sensitive payloads.
-- Diagnostics endpoint returns redacted summaries only.
+- **CSRF protection** enabled via `protect_from_forgery` (Rails default).
+- **Strong parameters** on all controllers — no mass assignment vulnerabilities.
+- **Parameter filtering** — `password`, `password_confirmation`, and `reset_password_token` are filtered from logs (see `config/initializers/filter_parameter_logging.rb`).
+- **Content Security Policy** — configurable in `config/initializers/content_security_policy.rb`.
 
-## Data at Rest
+## Secrets Management
 
-- SQLite stored in user profile directory with OS-level file permissions.
-- Raw payload blobs are optional and size-capped.
+- Credentials stored in `config/credentials.yml.enc`, decrypted with `RAILS_MASTER_KEY`.
+- In Docker, `RAILS_MASTER_KEY` is passed as an environment variable.
+- `config/master.key` is in `.gitignore` — never committed.
 
 ## Transport
 
-- HTTP on localhost only.
-- No TLS required for loopback.
+- **Production:** `config.force_ssl` controlled by `FORCE_SSL` env var. Enable when behind a TLS-terminating proxy.
+- **Development:** HTTP on localhost. No TLS required for local dev.
+
+## Data at Rest
+
+- PostgreSQL with OS-level file permissions.
+- Monetary values stored as integer cents — no precision loss.
+- Imported file contents are not stored permanently — only parsed transaction data is persisted.
+
+## Dependencies
+
+- Gems are locked via `Gemfile.lock`.
+- Docker image uses slim Ruby base with minimal attack surface.
+- No Redis or external message brokers — all background processing via PostgreSQL-backed good_job.
