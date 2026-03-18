@@ -2,7 +2,13 @@
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-gray-900">Transactions</h1>
     <div class="flex space-x-3">
-      <%= link_to "Uncategorized", uncategorized_transactions_path, class: "inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50" %>
+      <% uncategorized_count = Transaction.joins(:account).where(accounts: { user_id: current_user.id }).uncategorized.count %>
+      <%= link_to uncategorized_transactions_path, class: "inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50" do %>
+        Uncategorized
+        <% if uncategorized_count > 0 %>
+          <span class="ml-1.5 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800"><%= uncategorized_count %></span>
+        <% end %>
+      <% end %>
       <%= link_to "New Transaction", new_transaction_path, class: "inline-flex items-center px-4 py-2 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700" %>
     </div>
   </div>

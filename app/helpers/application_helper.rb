@@ -12,6 +12,15 @@ module ApplicationHelper
     content_tag(:span, status.to_s.titleize, class: "px-2 py-1 text-xs rounded-full #{css}")
   end
 
+  def category_label(category)
+    return content_tag(:span, "Uncategorized", class: "text-gray-400 italic") unless category
+
+    content_tag(:span, class: "inline-flex items-center") do
+      content_tag(:span, "", class: "w-2 h-2 rounded-full mr-1.5", style: "background-color: #{category.color};") +
+        category.name
+    end
+  end
+
   def filter_active?
     %i[account_id category_id type date_from date_to].any? { |k| params[k].present? }
   end
