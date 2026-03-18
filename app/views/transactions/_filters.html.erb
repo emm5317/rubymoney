@@ -1,0 +1,35 @@
+<div class="bg-white shadow rounded-lg p-4 mb-6">
+  <%= form_with(url: transactions_path, method: :get, class: "flex flex-wrap items-end gap-4", data: { turbo_frame: "_top" }) do |f| %>
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">Account</label>
+      <%= select_tag :account_id, options_from_collection_for_select(current_user.accounts, :id, :name, params[:account_id]), include_blank: "All Accounts", class: "rounded-md border-gray-300 shadow-sm text-sm py-1.5 focus:border-indigo-500 focus:ring-indigo-500" %>
+    </div>
+
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">Category</label>
+      <%= select_tag :category_id, options_for_select([["Uncategorized", "uncategorized"]] + Category.sorted.map { |c| [c.name, c.id] }, params[:category_id]), include_blank: "All Categories", class: "rounded-md border-gray-300 shadow-sm text-sm py-1.5 focus:border-indigo-500 focus:ring-indigo-500" %>
+    </div>
+
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">Type</label>
+      <%= select_tag :type, options_for_select([["Debit", "debit"], ["Credit", "credit"]], params[:type]), include_blank: "All Types", class: "rounded-md border-gray-300 shadow-sm text-sm py-1.5 focus:border-indigo-500 focus:ring-indigo-500" %>
+    </div>
+
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">From</label>
+      <%= date_field_tag :date_from, params[:date_from], class: "rounded-md border-gray-300 shadow-sm text-sm py-1.5 focus:border-indigo-500 focus:ring-indigo-500" %>
+    </div>
+
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">To</label>
+      <%= date_field_tag :date_to, params[:date_to], class: "rounded-md border-gray-300 shadow-sm text-sm py-1.5 focus:border-indigo-500 focus:ring-indigo-500" %>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <%= f.submit "Filter", class: "px-4 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 cursor-pointer" %>
+      <% if filter_active? %>
+        <%= link_to "Clear", transactions_path, class: "px-4 py-1.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50" %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

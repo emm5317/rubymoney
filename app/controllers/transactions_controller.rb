@@ -5,8 +5,20 @@ class TransactionsController < ApplicationController
     scope = Transaction.joins(:account)
       .where(accounts: { user_id: current_user.id })
       .includes(:account, :category, :tags)
-      .recent
-    @pagy, @transactions = pagy(scope)
+
+    scope = scope.by_account(params[:account_id]) if params[:account_id].present?
+
+    if params[:category_id] == "uncategorized"
+      scope = scope.uncategorized
+    elsif params[:category_id].present?
+      scope = scope.by_category(params[:category_id])
+    end
+
+    scope = scope.where(transaction_type: params[:type]) if params[:type].present?
+    scope = scope.where("transactions.date >= ?", params[:date_from]) if params[:date_from].present?
+    scope = scope.where("transactions.date <= ?", params[:date_to]) if params[:date_to].present?
+
+    @pagy, @transactions = pagy(scope.recent)
   end
 
   def show

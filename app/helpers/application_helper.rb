@@ -12,6 +12,10 @@ module ApplicationHelper
     content_tag(:span, status.to_s.titleize, class: "px-2 py-1 text-xs rounded-full #{css}")
   end
 
+  def filter_active?
+    %i[account_id category_id type date_from date_to].any? { |k| params[k].present? }
+  end
+
   def transaction_status_badge(status)
     css = case status.to_s
           when "cleared"     then "bg-green-100 text-green-800"

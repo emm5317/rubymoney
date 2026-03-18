@@ -7,6 +7,8 @@
     </div>
   </div>
 
+  <%= render "filters" %>
+
   <% if @transactions.any? %>
     <div class="bg-white shadow rounded-lg overflow-hidden">
       <table class="min-w-full divide-y divide-gray-200">
@@ -52,8 +54,13 @@
     </div>
   <% else %>
     <div class="bg-white shadow rounded-lg p-8 text-center">
-      <p class="text-gray-500">No transactions yet.</p>
-      <%= link_to "Add your first transaction", new_transaction_path, class: "mt-2 inline-block text-indigo-600 hover:text-indigo-900" %>
+      <% if filter_active? %>
+        <p class="text-gray-500">No transactions match your filters.</p>
+        <%= link_to "Clear filters", transactions_path, class: "mt-2 inline-block text-indigo-600 hover:text-indigo-900" %>
+      <% else %>
+        <p class="text-gray-500">No transactions yet.</p>
+        <%= link_to "Add your first transaction", new_transaction_path, class: "mt-2 inline-block text-indigo-600 hover:text-indigo-900" %>
+      <% end %>
     </div>
   <% end %>
 
