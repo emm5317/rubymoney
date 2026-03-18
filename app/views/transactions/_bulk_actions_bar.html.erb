@@ -1,0 +1,21 @@
+<div data-bulk-select-target="bar" class="hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+    <span class="text-sm font-medium text-gray-700" data-bulk-select-target="count">0 selected</span>
+
+    <div class="flex items-center space-x-4">
+      <%# Bulk Categorize %>
+      <%= form_with(url: bulk_categorize_transactions_path, method: :post, class: "flex items-center space-x-2") do |f| %>
+        <%= hidden_field_tag :transaction_ids, "", data: { bulk_select_target: "ids" } %>
+        <%= f.select :category_id, Category.sorted.map { |c| [c.name, c.id] }, { prompt: "Select category..." }, class: "rounded-md border-gray-300 shadow-sm text-sm py-1.5 focus:border-indigo-500 focus:ring-indigo-500" %>
+        <%= f.submit "Apply Category", class: "px-3 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 cursor-pointer" %>
+      <% end %>
+
+      <%# Bulk Tag %>
+      <%= form_with(url: bulk_tag_transactions_path, method: :post, class: "flex items-center space-x-2") do |f| %>
+        <%= hidden_field_tag :transaction_ids, "", data: { bulk_select_target: "ids" } %>
+        <%= f.select :tag_ids, Tag.sorted.map { |t| [t.name, t.id] }, {}, { multiple: true, class: "rounded-md border-gray-300 shadow-sm text-sm py-1.5 focus:border-indigo-500 focus:ring-indigo-500", size: 1 } %>
+        <%= f.submit "Apply Tags", class: "px-3 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 cursor-pointer" %>
+      <% end %>
+    </div>
+  </div>
+</div>

@@ -93,19 +93,39 @@ class TransactionsController < ApplicationController
   end
 
   def bulk_categorize
-    head :ok
+    ids = params[:transaction_ids].to_s.split(",")
+    transactions = find_transactions_by_ids(ids)
+    count = transactions.update_all(category_id: params[:category_id])
+    redirect_back fallback_location: transactions_path, notice: "#{count} transactions categorized."
   end
 
   def bulk_tag
-    head :ok
+    ids = params[:transaction_ids].to_s.split(",")
+    transactions = find_transactions_by_ids(ids)
+    tag_ids = Array(params[:tag_ids]).reject(&:blank?)
+
+    count = 0
+    transactions.find_each do |txn|
+      tag_ids.each do |tag_id|
+        txn.transaction_tags.find_or_create_by!(tag_id: tag_id)
+        count += 1
+      end
+    end
+    redirect_back fallback_location: transactions_path, notice: "Tags applied to #{transactions.count} transactions."
   end
 
   private
 
   def find_transaction
-    Transaction.joins(:account)
-      .where(accounts: { user_id: current_user.id })
-      .find(params[:id])
+    user_transactions_scope.find(params[:id])
+  end
+
+  def find_transactions_by_ids(ids)
+    user_transactions_scope.where(id: ids)
+  end
+
+  def user_transactions_scope
+    Transaction.joins(:account).where(accounts: { user_id: current_user.id })
   end
 
   def transaction_params
