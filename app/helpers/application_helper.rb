@@ -25,6 +25,20 @@ module ApplicationHelper
     %i[account_id category_id type date_from date_to].any? { |k| params[k].present? }
   end
 
+  def format_cents(cents)
+    number_to_currency(cents / 100.0)
+  end
+
+  def budget_progress_color(percentage)
+    if percentage < 80
+      "bg-green-500"
+    elsif percentage <= 100
+      "bg-yellow-500"
+    else
+      "bg-red-500"
+    end
+  end
+
   def transaction_status_badge(status)
     css = case status.to_s
           when "cleared"     then "bg-green-100 text-green-800"

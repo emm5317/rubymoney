@@ -1,0 +1,17 @@
+<% if @tag_spending.any? %>
+  <div class="bg-white shadow rounded-lg p-6 mb-8">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Spending by Tag</h3>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <% @tag_spending.each do |(tag_id, tag_name, tag_color), amount_cents| %>
+        <div class="border border-gray-200 rounded-lg p-3">
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                style="background-color: <%= tag_color %>20; color: <%= tag_color %>;">
+            <%= tag_name %>
+          </span>
+          <p class="text-lg font-semibold text-gray-900 mt-2"><%= format_cents(amount_cents) %></p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

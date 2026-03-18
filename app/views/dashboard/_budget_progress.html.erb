@@ -1,0 +1,34 @@
+<% if @budgets.any? %>
+  <div class="bg-white shadow rounded-lg p-6 mb-8">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-semibold text-gray-900">Budget vs. Actual</h3>
+      <%= link_to "Manage Budgets →", budgets_path, class: "text-sm text-indigo-600 hover:text-indigo-900" %>
+    </div>
+
+    <div class="space-y-4">
+      <% @budgets.each do |budget| %>
+        <% actual = @budget_actuals[budget.category_id] || 0 %>
+        <% percentage = budget.amount_cents > 0 ? (actual.to_f / budget.amount_cents * 100).round(1) : 0 %>
+        <% bar_width = [percentage, 100].min %>
+
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-sm font-medium text-gray-700">
+              <%= category_label(budget.category) %>
+            </span>
+            <span class="text-sm text-gray-500">
+              <%= format_cents(actual) %> / <%= format_cents(budget.amount_cents) %>
+              <span class="ml-1 text-xs <%= percentage > 100 ? 'text-red-600 font-semibold' : 'text-gray-400' %>">
+                (<%= percentage %>%)
+              </span>
+            </span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2.5">
+            <div class="<%= budget_progress_color(percentage) %> h-2.5 rounded-full transition-all"
+                 style="width: <%= bar_width %>%"></div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

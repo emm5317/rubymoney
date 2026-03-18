@@ -9,7 +9,9 @@ Rails.application.routes.draw do
     root to: "devise/sessions#new"
   end
 
-  resource :dashboard, only: [:show], controller: "dashboard"
+  resource :dashboard, only: [:show], controller: "dashboard" do
+    get :drilldown
+  end
 
   resources :accounts do
     resources :imports, only: [:new, :create, :show, :index] do
@@ -37,7 +39,11 @@ Rails.application.routes.draw do
   end
 
   resources :categories
-  resources :budgets
+  resources :budgets do
+    collection do
+      post :copy_previous
+    end
+  end
   resources :rules
   resources :tags
 

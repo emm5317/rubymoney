@@ -1,7 +1,13 @@
 <div class="max-w-7xl mx-auto px-4 py-8">
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-gray-900">Budgets</h1>
-    <%= link_to "New Budget", new_budget_path, class: "inline-flex items-center px-4 py-2 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700" %>
+    <div class="flex items-center gap-3">
+      <%= button_to "Copy from Previous Month",
+          copy_previous_budgets_path(month: Date.current.month, year: Date.current.year),
+          method: :post,
+          class: "inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50 text-sm" %>
+      <%= link_to "New Budget", new_budget_path, class: "inline-flex items-center px-4 py-2 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700" %>
+    </div>
   </div>
 
   <% if @budgets.any? %>
@@ -11,18 +17,34 @@
           <tr>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Month</th>
-            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Budget</th>
+            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Spent</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
           <% @budgets.each_with_index do |budget, index| %>
+            <% actual = @actuals_by_key[[budget.category_id, budget.month, budget.year]] || 0 %>
+            <% percentage = budget.amount_cents > 0 ? (actual.to_f / budget.amount_cents * 100).round(1) : 0 %>
+            <% bar_width = [percentage, 100].min %>
             <tr class="<%= index.even? ? 'bg-white' : 'bg-gray-50' %> hover:bg-gray-100 transition-colors">
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 <%= category_label(budget.category) %>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= Date.new(budget.year, budget.month).strftime("%B %Y") %></td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right"><%= number_to_currency(budget.display_amount) %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right"><%= format_cents(budget.amount_cents) %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-right <%= percentage > 100 ? 'text-red-600 font-semibold' : 'text-gray-900' %>">
+                <%= format_cents(actual) %>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm">
+                <div class="flex items-center gap-2">
+                  <div class="w-24 bg-gray-200 rounded-full h-2">
+                    <div class="<%= budget_progress_color(percentage) %> h-2 rounded-full" style="width: <%= bar_width %>%"></div>
+                  </div>
+                  <span class="text-xs text-gray-500"><%= percentage %>%</span>
+                </div>
+              </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm space-x-2">
                 <%= link_to "Edit", edit_budget_path(budget), class: "text-indigo-600 hover:text-indigo-900" %>
                 <%= button_to "Delete", budget_path(budget), method: :delete, class: "text-red-600 hover:text-red-900", data: { turbo_confirm: "Are you sure?" } %>
