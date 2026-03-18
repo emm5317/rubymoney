@@ -31,6 +31,11 @@ module Importers
       nil
     end
 
+    def correct_description(description)
+      return description unless import_profile
+      import_profile.apply_description_correction(description)
+    end
+
     def determine_type(amount_cents)
       amount_cents.negative? ? :debit : :credit
     end

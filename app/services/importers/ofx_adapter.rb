@@ -18,9 +18,7 @@ module Importers
       description = (txn.name.presence || txn.memo.presence || "").strip
       return nil if description.blank?
 
-      if import_profile
-        description = import_profile.apply_description_correction(description)
-      end
+      description = correct_description(description)
 
       amount_cents = (txn.amount * 100).round
       return nil if amount_cents == 0

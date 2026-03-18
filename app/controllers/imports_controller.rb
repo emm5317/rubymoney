@@ -44,6 +44,10 @@ class ImportsController < ApplicationController
 
   def preview
     @parsed_transactions = @import.preview_data || []
+    fingerprints = @parsed_transactions.filter_map { |t| t["source_fingerprint"] || t[:source_fingerprint] }
+    @existing_fingerprints = Transaction.where(account_id: @account.id, source_fingerprint: fingerprints)
+                                        .pluck(:source_fingerprint)
+                                        .to_set
   end
 
   def confirm
@@ -65,8 +69,9 @@ class ImportsController < ApplicationController
       return
     end
 
+    removed_count = @import.transactions.count
     @import.rollback!
-    redirect_to account_imports_path(@account), notice: "Import rolled back. #{@import.transactions.count} transactions removed."
+    redirect_to account_imports_path(@account), notice: "Import rolled back. #{removed_count} transactions removed."
   end
 
   private

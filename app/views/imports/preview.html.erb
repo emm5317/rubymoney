@@ -26,9 +26,9 @@
           <% @parsed_transactions.each_with_index do |txn, index| %>
             <% txn = txn.symbolize_keys %>
             <% amount_cents = txn[:amount_cents].to_i %>
-            <% is_debit = amount_cents.negative? %>
-            <% existing = Transaction.exists?(account_id: @account.id, source_fingerprint: txn[:source_fingerprint]) %>
-            <tr class="<%= index.even? ? 'bg-white' : 'bg-gray-50' %> <%= existing ? 'opacity-50' : '' %>">
+            <% is_debit = txn[:transaction_type].to_s == "debit" %>
+            <% duplicate = @existing_fingerprints.include?(txn[:source_fingerprint]) %>
+            <tr class="<%= index.even? ? 'bg-white' : 'bg-gray-50' %> <%= duplicate ? 'opacity-50' : '' %>">
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= txn[:date] %></td>
               <td class="px-6 py-4 text-sm text-gray-900"><%= txn[:description] %></td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-right <%= is_debit ? 'text-red-600' : 'text-green-600' %>">
@@ -36,7 +36,7 @@
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= is_debit ? 'Debit' : 'Credit' %></td>
               <td class="px-6 py-4 whitespace-nowrap text-sm">
-                <% if existing %>
+                <% if duplicate %>
                   <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">Duplicate — will skip</span>
                 <% else %>
                   <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">New</span>

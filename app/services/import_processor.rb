@@ -31,6 +31,12 @@ class ImportProcessor
     skipped = 0
     errors = []
 
+    # Batch-load existing fingerprints to avoid N+1 queries
+    fingerprints = parsed.filter_map { |r| r.symbolize_keys[:source_fingerprint].presence || r["source_fingerprint"].presence }
+    @existing_fingerprints = Transaction.where(account_id: account.id, source_fingerprint: fingerprints)
+                                        .pluck(:source_fingerprint)
+                                        .to_set
+
     parsed.each do |row_data|
       row = row_data.symbolize_keys
       result = import_row(row)
@@ -78,24 +84,22 @@ class ImportProcessor
     end
   end
 
+  ADAPTER_MAP = {
+    "csv" => Importers::CsvAdapter,
+    "ofx" => Importers::OfxAdapter,
+    "qfx" => Importers::OfxAdapter
+  }.freeze
+
   def build_adapter(content)
     profile = ImportProfile.find_by(account_id: account.id, institution: account.institution)
-
-    case import.file_type
-    when "csv"
-      Importers::CsvAdapter.new(content, account: account, import_profile: profile)
-    when "ofx", "qfx"
-      Importers::OfxAdapter.new(content, account: account, import_profile: profile)
-    else
-      raise "Unsupported file type: #{import.file_type}"
-    end
+    adapter_class = ADAPTER_MAP[import.file_type] || raise("Unsupported file type: #{import.file_type}")
+    adapter_class.new(content, account: account, import_profile: profile)
   end
 
   def import_row(row)
-    # Check for duplicate via fingerprint
-    if row[:source_fingerprint].present?
-      existing = Transaction.find_by(account_id: account.id, source_fingerprint: row[:source_fingerprint])
-      return :skipped if existing
+    # Check for duplicate via preloaded fingerprints
+    if row[:source_fingerprint].present? && @existing_fingerprints.include?(row[:source_fingerprint])
+      return :skipped
     end
 
     transaction = import.transactions.build(

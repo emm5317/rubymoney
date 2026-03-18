@@ -59,10 +59,7 @@ module Importers
       description = row[mapping[:description]].to_s.strip
       return nil if description.blank?
 
-      # Apply learned description corrections
-      if import_profile
-        description = import_profile.apply_description_correction(description)
-      end
+      description = correct_description(description)
 
       amount_cents = extract_amount_cents(row, mapping)
       return nil if amount_cents.nil? || amount_cents == 0

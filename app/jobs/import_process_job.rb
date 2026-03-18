@@ -7,10 +7,9 @@ class ImportProcessJob < ApplicationJob
 
     processor = ImportProcessor.new(import)
 
-    case import.status
-    when "pending"
+    if import.pending?
       processor.preview
-    when "previewing"
+    elsif import.previewing?
       processor.confirm
     end
   rescue StandardError => e
@@ -18,6 +17,6 @@ class ImportProcessJob < ApplicationJob
       status: :failed,
       error_log: (import.error_log || []) + [{ error: e.message, at: Time.current.iso8601 }]
     )
-    raise # Re-raise so good_job can track the failure
+    raise
   end
 end
