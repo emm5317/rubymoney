@@ -60,8 +60,17 @@ class TransactionsController < ApplicationController
 
   def categorize
     @transaction = find_transaction
-    @transaction.update!(category_id: params[:category_id])
-    redirect_back fallback_location: transactions_path, notice: "Transaction categorized."
+    @transaction.update!(category_id: params[:category_id].presence)
+    respond_to do |format|
+      format.html { redirect_back fallback_location: transactions_path, notice: "Transaction categorized." }
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.replace(
+          "transaction_#{@transaction.id}_category",
+          partial: "transactions/category_cell",
+          locals: { transaction: @transaction.reload }
+        )
+      end
+    end
   end
 
   def create_rule

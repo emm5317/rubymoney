@@ -29,7 +29,7 @@
             <td class="px-6 py-4 whitespace-nowrap text-sm text-right <%= transaction.transaction_type == 'debit' ? 'text-red-600' : 'text-green-600' %>">
               <%= number_to_currency(transaction.amount) %>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= transaction.category&.name || "Uncategorized" %></td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm"><%= render "category_cell", transaction: transaction %></td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= transaction.account.name %></td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
               <%= link_to "Edit", edit_transaction_path(transaction), class: "text-indigo-600 hover:text-indigo-900" %>

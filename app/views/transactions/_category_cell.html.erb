@@ -1,0 +1,19 @@
+<%= turbo_frame_tag "transaction_#{transaction.id}_category" do %>
+  <div data-controller="inline-edit">
+    <div data-inline-edit-target="display" class="cursor-pointer" data-action="click->inline-edit#toggle">
+      <% if transaction.category %>
+        <span class="inline-flex items-center">
+          <span class="w-2 h-2 rounded-full mr-1.5 flex-shrink-0" style="background-color: <%= transaction.category.color %>;"></span>
+          <span class="text-gray-900"><%= transaction.category.name %></span>
+        </span>
+      <% else %>
+        <span class="text-gray-400 italic">Uncategorized</span>
+      <% end %>
+    </div>
+    <div data-inline-edit-target="form" class="hidden">
+      <%= form_with(url: categorize_transaction_path(transaction), method: :patch, class: "flex items-center space-x-1") do |f| %>
+        <%= f.select :category_id, Category.sorted.map { |c| [c.name, c.id] }, { include_blank: "— None —" }, class: "block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1", data: { action: "change->inline-edit#submit" } %>
+      <% end %>
+    </div>
+  </div>
+<% end %>
