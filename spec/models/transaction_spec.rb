@@ -62,10 +62,16 @@ RSpec.describe Transaction, type: :model do
     end
   end
 
-  describe "#display_amount" do
+  describe "#amount" do
     it "converts cents to dollars" do
       txn = build(:transaction, amount_cents: -1550)
-      expect(txn.display_amount).to eq(-15.5)
+      expect(txn.amount).to eq(-15.5)
+    end
+
+    it "converts dollars to cents via setter" do
+      txn = build(:transaction)
+      txn.amount = 25.99
+      expect(txn.amount_cents).to eq(2599)
     end
   end
 

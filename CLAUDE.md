@@ -10,7 +10,9 @@ Personal finance app: import bank/credit card statements, categorize transaction
 
 **Phase 1 complete** — Foundation (models, migrations, controllers, views, auth, seeds, test setup). See BUILD_PLAN.md for full roadmap.
 
-**Not yet built:** Import pipeline (services/adapters), Categorizer service, Chart.js dashboards, PDF import, transfer matching service, recurring detection, export.
+**Phase 2 complete** — Import pipeline (CSV + OFX adapters, ImportProcessor, Categorizer, preview/confirm flow, deduplication). See BUILD_PLAN.md for full roadmap.
+
+**Not yet built:** Chart.js dashboards, PDF import, transfer matching service, recurring detection, export.
 
 ## Key Commands
 
@@ -35,15 +37,20 @@ RAILS_ENV=test bin/rails db:prepare  # Prepare test database
 - `Rule#match_field` enum uses `amount_field` (not `amount`) — AR reserves `#amount` in some contexts.
 - When adding new models/associations, check for AR method name conflicts.
 
-### Import Pipeline (to be built)
+### Import Pipeline
 - Adapter pattern: `app/services/importers/base_adapter.rb` defines the interface.
-- Each format (CSV, OFX, PDF) gets its own adapter implementing `#parse`.
-- Deduplication: SHA256 fingerprint for CSV/PDF, FITID for OFX/QFX.
+- `Importers::CsvAdapter` — parses CSV files, auto-detects column mappings, handles currency symbols/parentheses/separate debit-credit columns.
+- `Importers::OfxAdapter` — parses OFX/QFX files using `ofx` gem, uses FITID for deduplication.
+- `ImportProcessor` orchestrates the flow: parse → preview → confirm → categorize.
+- Deduplication: SHA256 fingerprint for CSV, FITID for OFX/QFX. Unique index on `[account_id, source_fingerprint]`.
 - Smart preview: ImportProfile learns column mappings, date formats, description corrections per account+institution.
+- Flow: upload → parse preview (transactions shown in table with duplicate detection) → user confirms → persist + auto-categorize.
 
-### Categorization (to be built)
+### Categorization
 - `Categorizer` service applies `Rule` records in priority order (highest priority wins).
+- `#categorize(txn)` — single transaction. `#categorize_batch(txns)` — bulk. `#apply_retroactive` — all uncategorized.
 - Rules match on `description`, `normalized_desc`, or `amount_field` with types: `contains`, `exact`, `starts_with`, `regex`, `gt`, `lt`, `between`.
+- Auto-categorization runs automatically after import confirm.
 
 ### Background Jobs
 - good_job with PostgreSQL backend. No Redis anywhere.
@@ -108,7 +115,8 @@ Account -< AccountBalance (historical snapshots)
 ### Testing
 - **RSpec** with FactoryBot. Factories in `spec/factories/`.
 - Devise test helpers included for request and system specs.
-- Model specs exist for all 10 models. Controller/request/system specs not yet written.
+- Model specs for all 10 models. Service specs for CsvAdapter, Categorizer, ImportProcessor.
+- Controller/request/system specs not yet written.
 - Run with `bundle exec rspec`. Test DB: `budgetexcel_test`.
 
 ### Database
@@ -127,9 +135,9 @@ app/
   models/         # 11 models (user, account, transaction, category, budget,
                   #   tag, transaction_tag, rule, import, import_profile, account_balance)
   views/          # 7 resource dirs + layouts + dashboard + shared
-  services/       # (empty — Phase 2 builds import adapters + categorizer)
+  services/       # ImportProcessor, Categorizer, importers/ (BaseAdapter, CsvAdapter, OfxAdapter)
   helpers/        # ApplicationHelper with Pagy::Frontend
-  jobs/           # ApplicationJob base class (specific jobs Phase 2+)
+  jobs/           # ImportProcessJob (parse + confirm imports)
   javascript/     # Importmap + Stimulus (controllers Phase 4+)
 config/
   routes.rb       # All routes defined, some controller actions are stubs
@@ -140,6 +148,7 @@ db/
   migrate/        # All Phase 1 migrations
 spec/
   models/         # 10 model specs
+  services/       # CsvAdapter, Categorizer, ImportProcessor specs
   factories/      # 10 factory files
 ```
 

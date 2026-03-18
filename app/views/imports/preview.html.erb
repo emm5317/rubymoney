@@ -1,17 +1,61 @@
 <div class="max-w-7xl mx-auto px-4 py-8">
-  <h1 class="text-2xl font-bold text-gray-900 mb-6">Preview: <%= @import.file_name %></h1>
-  <div class="bg-white shadow rounded-lg p-6">
-    <p class="text-gray-500 mb-4">Review the parsed transactions below before confirming.</p>
-    <% if @import.preview_data.present? %>
-      <div class="overflow-x-auto">
-        <p class="text-sm text-gray-500"><%= @import.preview_data.size %> transactions parsed</p>
-      </div>
-    <% else %>
-      <p class="text-gray-500">No preview data available yet.</p>
-    <% end %>
-    <div class="mt-6 flex space-x-4">
-      <%= button_to "Confirm Import", confirm_account_import_path(@account, @import), method: :post, class: "px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700" %>
-      <%= link_to "Cancel", account_imports_path(@account), class: "px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300" %>
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Preview: <%= @import.file_name %></h1>
+      <p class="text-sm text-gray-500 mt-1"><%= @parsed_transactions.size %> transactions parsed from file</p>
+    </div>
+    <div class="flex space-x-3">
+      <%= button_to "Confirm Import", confirm_account_import_path(@account, @import), method: :post, class: "px-4 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700" %>
+      <%= link_to "Cancel", account_imports_path(@account), class: "px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-md hover:bg-gray-300" %>
     </div>
   </div>
+
+  <% if @parsed_transactions.any? %>
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <% @parsed_transactions.each_with_index do |txn, index| %>
+            <% txn = txn.symbolize_keys %>
+            <% amount_cents = txn[:amount_cents].to_i %>
+            <% is_debit = amount_cents.negative? %>
+            <% existing = Transaction.exists?(account_id: @account.id, source_fingerprint: txn[:source_fingerprint]) %>
+            <tr class="<%= index.even? ? 'bg-white' : 'bg-gray-50' %> <%= existing ? 'opacity-50' : '' %>">
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= txn[:date] %></td>
+              <td class="px-6 py-4 text-sm text-gray-900"><%= txn[:description] %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-right <%= is_debit ? 'text-red-600' : 'text-green-600' %>">
+                <%= number_to_currency(amount_cents / 100.0) %>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= is_debit ? 'Debit' : 'Credit' %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm">
+                <% if existing %>
+                  <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">Duplicate — will skip</span>
+                <% else %>
+                  <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">New</span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-6 flex justify-end space-x-3">
+      <%= button_to "Confirm Import", confirm_account_import_path(@account, @import), method: :post, class: "px-4 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700" %>
+      <%= link_to "Cancel", account_imports_path(@account), class: "px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-md hover:bg-gray-300" %>
+    </div>
+  <% else %>
+    <div class="bg-white shadow rounded-lg p-8 text-center">
+      <p class="text-gray-500">No transactions could be parsed from this file.</p>
+      <%= link_to "Try Again", new_account_import_path(@account), class: "mt-4 inline-block text-indigo-600 hover:text-indigo-900" %>
+    </div>
+  <% end %>
 </div>

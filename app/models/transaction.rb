@@ -14,7 +14,7 @@ class Transaction < ApplicationRecord
   validates :description, presence: true
   validates :amount_cents, presence: true, numericality: { other_than: 0 }
 
-  before_save :set_normalized_desc, if: -> { description_changed? && normalized_desc.blank? }
+  before_save :set_normalized_desc, if: :description_changed?
 
   scope :uncategorized, -> { where(category_id: nil) }
   scope :categorized, -> { where.not(category_id: nil) }

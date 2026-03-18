@@ -42,10 +42,10 @@ RSpec.describe Account, type: :model do
     end
   end
 
-  describe "#display_balance" do
+  describe "#balance" do
     it "converts cents to dollars" do
       account = build(:account, current_balance_cents: 150_075)
-      expect(account.display_balance).to eq(1500.75)
+      expect(account.balance).to eq(1500.75)
     end
   end
 end

@@ -1,13 +1,13 @@
 class ImportsController < ApplicationController
   before_action :authenticate_user!
   before_action :set_account
+  before_action :set_import, only: [:show, :preview, :confirm, :rollback]
 
   def index
     @imports = @account.imports.recent
   end
 
   def show
-    @import = @account.imports.find(params[:id])
   end
 
   def new
@@ -16,26 +16,57 @@ class ImportsController < ApplicationController
 
   def create
     @import = @account.imports.build(import_params)
+    @import.file_name = params[:import][:file]&.original_filename || "upload"
+    @import.file.attach(params[:import][:file]) if params[:import][:file]
+
+    unless @import.file.attached?
+      @import.errors.add(:base, "Please select a file to upload")
+      render :new, status: :unprocessable_entity
+      return
+    end
+
+    # Auto-detect file type from extension
+    ext = File.extname(@import.file_name).downcase.delete(".")
+    @import.file_type = ext if Import.file_types.key?(ext)
+
     if @import.save
-      redirect_to account_import_path(@account, @import), notice: "File uploaded. Processing..."
+      # Parse and generate preview synchronously (good_job runs inline in dev)
+      processor = ImportProcessor.new(@import)
+      processor.preview
+      redirect_to preview_account_import_path(@account, @import), notice: "File parsed. Review transactions below."
     else
       render :new, status: :unprocessable_entity
     end
+  rescue StandardError => e
+    @import.update(status: :failed, error_log: [{ error: e.message, at: Time.current.iso8601 }]) if @import&.persisted?
+    redirect_to new_account_import_path(@account), alert: "Failed to parse file: #{e.message}"
   end
 
   def preview
-    @import = @account.imports.find(params[:id])
+    @parsed_transactions = @import.preview_data || []
   end
 
   def confirm
-    @import = @account.imports.find(params[:id])
-    redirect_to account_import_path(@account, @import), notice: "Import confirmed."
+    unless @import.previewing?
+      redirect_to account_import_path(@account, @import), alert: "This import cannot be confirmed."
+      return
+    end
+
+    processor = ImportProcessor.new(@import)
+    result = processor.confirm
+
+    redirect_to account_import_path(@account, @import),
+      notice: "Import complete: #{result[:imported]} imported, #{result[:skipped]} skipped, #{result[:categorized]} auto-categorized."
   end
 
   def rollback
-    @import = @account.imports.find(params[:id])
+    unless @import.completed?
+      redirect_to account_import_path(@account, @import), alert: "Only completed imports can be rolled back."
+      return
+    end
+
     @import.rollback!
-    redirect_to account_imports_path(@account), notice: "Import rolled back."
+    redirect_to account_imports_path(@account), notice: "Import rolled back. #{@import.transactions.count} transactions removed."
   end
 
   private
@@ -44,7 +75,11 @@ class ImportsController < ApplicationController
     @account = current_user.accounts.find(params[:account_id])
   end
 
+  def set_import
+    @import = @account.imports.find(params[:id])
+  end
+
   def import_params
-    params.require(:import).permit(:file_name, :file_type)
+    params.require(:import).permit(:file_type)
   end
 end
