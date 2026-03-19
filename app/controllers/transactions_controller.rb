@@ -1,27 +1,10 @@
+require "csv"
+
 class TransactionsController < ApplicationController
   before_action :authenticate_user!
 
   def index
-    scope = Transaction.joins(:account)
-      .where(accounts: { user_id: current_user.id })
-      .includes(:account, :category, :tags)
-
-    scope = scope.by_account(params[:account_id]) if params[:account_id].present?
-
-    if params[:category_id] == "uncategorized"
-      scope = scope.uncategorized
-    elsif params[:category_id].present?
-      scope = scope.by_category(params[:category_id])
-    end
-
-    scope = scope.where(transaction_type: params[:type]) if params[:type].present?
-    scope = scope.where("transactions.date >= ?", params[:date_from]) if params[:date_from].present?
-    scope = scope.where("transactions.date <= ?", params[:date_to]) if params[:date_to].present?
-
-    if params[:search].present?
-      search_term = "%#{Transaction.sanitize_sql_like(params[:search])}%"
-      scope = scope.where("transactions.description ILIKE :q OR transactions.normalized_desc ILIKE :q", q: search_term)
-    end
+    scope = filtered_scope
 
     sort_col = %w[date description amount_cents].include?(params[:sort]) ? params[:sort] : "date"
     sort_dir = params[:direction] == "asc" ? "asc" : "desc"
@@ -147,6 +130,30 @@ class TransactionsController < ApplicationController
     redirect_to @transaction, notice: "Transfer unlinked."
   end
 
+  def export
+    transactions = filtered_scope.order(date: :desc)
+
+    csv_data = CSV.generate do |csv|
+      csv << ["Date", "Description", "Amount", "Type", "Category", "Account", "Tags", "Memo", "Status"]
+      transactions.find_each do |txn|
+        csv << [
+          txn.date.iso8601,
+          txn.description,
+          txn.amount,
+          txn.transaction_type,
+          txn.category&.name,
+          txn.account.name,
+          txn.tags.map(&:name).join("; "),
+          txn.memo,
+          txn.status
+        ]
+      end
+    end
+
+    filename = "transactions_#{Date.current.iso8601}.csv"
+    send_data csv_data, filename: filename, type: "text/csv", disposition: "attachment"
+  end
+
   def bulk_categorize
     ids = params[:transaction_ids].to_s.split(",")
     transactions = find_transactions_by_ids(ids)
@@ -185,6 +192,31 @@ class TransactionsController < ApplicationController
 
   def user_transactions_scope
     Transaction.joins(:account).where(accounts: { user_id: current_user.id })
+  end
+
+  def filtered_scope
+    scope = Transaction.joins(:account)
+      .where(accounts: { user_id: current_user.id })
+      .includes(:account, :category, :tags)
+
+    scope = scope.by_account(params[:account_id]) if params[:account_id].present?
+
+    if params[:category_id] == "uncategorized"
+      scope = scope.uncategorized
+    elsif params[:category_id].present?
+      scope = scope.by_category(params[:category_id])
+    end
+
+    scope = scope.where(transaction_type: params[:type]) if params[:type].present?
+    scope = scope.where("transactions.date >= ?", params[:date_from]) if params[:date_from].present?
+    scope = scope.where("transactions.date <= ?", params[:date_to]) if params[:date_to].present?
+
+    if params[:search].present?
+      search_term = "%#{Transaction.sanitize_sql_like(params[:search])}%"
+      scope = scope.where("transactions.description ILIKE :q OR transactions.normalized_desc ILIKE :q", q: search_term)
+    end
+
+    scope
   end
 
   def transaction_params

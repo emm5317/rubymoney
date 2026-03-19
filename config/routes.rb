@@ -34,6 +34,7 @@ Rails.application.routes.draw do
     end
     collection do
       get  :uncategorized
+      get  :export
       post :bulk_categorize
       post :bulk_tag
     end
