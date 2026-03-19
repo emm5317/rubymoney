@@ -12,7 +12,8 @@
 | `PORT` | `3000` | Port for the Rails server. Docker Compose sets this to `3030`. |
 | `FORCE_SSL` | `false` | Set to `true` to enable HTTPS redirect and secure cookies in production. |
 | `RUBYMONEY_DATABASE_PASSWORD` | (none) | PostgreSQL password for production (used in `database.yml`). Not needed if `DATABASE_URL` is set. |
-| `REDIS_URL` | `redis://localhost:6379/1` | Action Cable production adapter URL. Not used in development (async adapter). |
+
+**Note:** No Redis is used anywhere. good_job uses PostgreSQL for background jobs. Action Cable uses the async adapter in development.
 
 ## Docker Compose Defaults
 

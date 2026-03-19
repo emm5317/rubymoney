@@ -52,6 +52,14 @@ Utility-first CSS eliminates naming bikeshedding, prevents specificity wars, and
 
 Even a single-user app needs authentication (it runs on a server). Devise provides battle-tested auth with zero custom security code. It handles password hashing, session management, CSRF protection, and remember-me tokens. Writing custom auth for "simplicity" is a false economy — the simplest auth is the one someone else debugged.
 
+### Why auto-detect recurring transactions instead of manual-only?
+
+Users don't know all their subscriptions. Detection reveals forgotten charges, price increases, and services they thought they cancelled. The algorithm groups by `normalized_desc`, analyzes intervals between transactions, and classifies frequency — requiring at least 3 occurrences and >40% confidence to avoid noise. Users can then confirm real patterns and dismiss false positives. This hybrid approach (auto-detect + manual marking) catches more patterns than pure manual tracking while keeping false positive rate manageable.
+
+### Why confidence scoring for recurring detection?
+
+Not every repeated transaction is a subscription. Someone who buys coffee at the same shop twice a month isn't subscribing — the intervals are irregular. Confidence scoring based on interval regularity (standard deviation from expected frequency) separates true subscriptions (Netflix every 30±1 days = 0.95 confidence) from coincidental repeats (random Starbucks visits = 0.3 confidence). The 0.4 minimum threshold filters out noise without being so strict it misses legitimate recurring charges with slight date variation.
+
 ### Why no multi-tenancy?
 
 The app is designed for one person. Adding user scoping to categories, rules, and tags adds complexity to every query for no benefit. Accounts and transactions are user-scoped because a future second user is plausible. Categories and rules are global because they represent a single user's financial taxonomy. If multi-user becomes a requirement, it's a known migration — add `user_id` to the global models and scope their queries.

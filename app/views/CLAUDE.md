@@ -120,6 +120,11 @@ Use the helpers in `ApplicationHelper`:
 - `transaction_status_badge(status)` — pending (yellow), cleared (green), reconciled (blue)
 - `import_status_badge(status)` — completed (green), failed (red), processing (blue), previewing (yellow)
 - `category_label(category)` — name with color dot, or "Uncategorized" in muted italic
+- `recurring_frequency_badge(frequency)` — weekly (blue), biweekly (cyan), monthly (indigo), quarterly (purple), annual (pink)
+- `recurring_status_badge(status)` — active (green), missed (red), paused (yellow), cancelled (gray)
+- `format_cents(cents)` — converts integer cents to `number_to_currency`
+- `sort_link(column, label)` — sortable table header link with arrow indicator
+- `sort_indicator(column)` — arrow glyph for active sort column
 
 Badge base style: `px-2 py-1 text-xs rounded-full`
 

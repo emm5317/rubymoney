@@ -2,21 +2,25 @@
 
 ## What This Is
 
-Personal finance app: import bank/credit card statements, categorize transactions, track budgets, view dashboards. Single-user, self-hosted.
+Personal finance app: import bank/credit card statements, categorize transactions, track budgets, detect recurring charges, view dashboards. Single-user, self-hosted.
 
 **Stack:** Rails 7.2 · Ruby 3.3 · PostgreSQL 16 · Hotwire (Turbo + Stimulus) · Tailwind CSS · good_job · Devise · Chart.js · Pagy
 
 ## Project Status
 
-**Phase 1 complete** — Foundation (models, migrations, controllers, views, auth, seeds, test setup). See BUILD_PLAN.md for full roadmap.
+**Phase 1 complete** — Foundation (models, migrations, controllers, views, auth, seeds, test setup).
 
-**Phase 2 complete** — Import pipeline (CSV + OFX adapters, ImportProcessor, Categorizer, preview/confirm flow, deduplication). See BUILD_PLAN.md for full roadmap.
+**Phase 2 complete** — Import pipeline (CSV + OFX adapters, ImportProcessor, Categorizer, preview/confirm flow, deduplication).
 
 **Phase 3 complete** — Categorization, tags, manual entry, transfer detection, inline editing, bulk operations, request specs for all Phase 3 controllers.
 
 **Phase 4 complete** — Dashboard charts (category spending, monthly trends, budget progress, tag spending, period navigation, drilldown, income vs. expenses area chart, net worth over time, top merchants, accounts overview with net worth total, BalanceSnapshotJob daily cron).
 
-**Not yet built:** PDF import (Phase 5), merchant normalization, recurring detection, export, pg_search, automated backup (Phase 6).
+**Phase 4.5 complete** — UX polish (nav improvements, uncategorized badge, text search, column sorting, rule preview, recent transactions on dashboard, mobile hamburger nav, CSV export).
+
+**Phase 4.6 complete** — Recurring transaction detection (auto-detect subscriptions/bills, manual marking, dashboard integration, confirm/dismiss/reactivate, RecurringDetectionJob daily cron).
+
+**Not yet built:** PDF import (Phase 5), merchant normalization, pg_search, automated backup, category/tag merge (Phase 6).
 
 ## Development Environment
 
@@ -76,10 +80,18 @@ docker compose -f docker-compose.yml -f docker-compose.test.yml build test
 - Rules match on `description`, `normalized_desc`, or `amount_field` with types: `contains`, `exact`, `starts_with`, `regex`, `gt`, `lt`, `between`.
 - Auto-categorization runs automatically after import confirm.
 
+### Recurring Detection
+- `RecurringDetector` service groups transactions by `normalized_desc`, analyzes interval regularity, classifies frequency (weekly/biweekly/monthly/quarterly/annual), scores confidence.
+- `RecurringTransaction` model stores detected patterns with status tracking (active/paused/cancelled/missed).
+- Users can confirm auto-detected patterns, dismiss false positives, or manually mark transaction groups as recurring.
+- `RecurringDetectionJob` runs daily at 3 AM via good_job cron.
+- Dashboard shows top recurring charges with total monthly cost and missed charge alerts.
+
 ### Background Jobs
 - good_job with PostgreSQL backend. No Redis anywhere.
-- Imports will run as background jobs with Turbo Stream progress updates.
-- `good_job` runs inline in development (no separate process needed).
+- `good_job` runs async in development.
+- Cron jobs: `BalanceSnapshotJob` (2 AM daily), `RecurringDetectionJob` (3 AM daily).
+- `ImportProcessJob` handles import parsing and confirmation.
 
 ## Data Model Quick Reference
 
@@ -94,13 +106,18 @@ User -< Account -< Transaction >- Category
 
 Transaction.transfer_pair_id -> Transaction (self-ref)
 Account -< AccountBalance (historical snapshots)
+Account -< RecurringTransaction >- Category
 ```
 
 ### Key Scopes on Transaction
 - `.uncategorized` — `category_id IS NULL`
+- `.categorized` — `category_id IS NOT NULL`
 - `.non_transfer` — `is_transfer = false`
+- `.transfers_only` — `is_transfer = true`
 - `.for_month(date)` — within calendar month
 - `.for_date_range(start, end)` — date range
+- `.by_category(category_id)` — by category
+- `.by_account(account_id)` — by account
 - `.tagged_with(tag)` — by tag id
 - `.debits` / `.credits` — by transaction type
 - `.recent` — `ORDER BY date DESC`
@@ -112,6 +129,7 @@ Account -< AccountBalance (historical snapshots)
 - `Tag.sorted` — by name
 - `Budget.for_month(month, year)` / `Budget.for_date(date)`
 - `AccountBalance.chronological` / `.recent_first`
+- `RecurringTransaction.active_or_missed` / `.not_dismissed` / `.upcoming` / `.by_amount`
 
 ## Conventions
 
@@ -124,7 +142,9 @@ Account -< AccountBalance (historical snapshots)
 
 ### Controllers
 - All controllers require `authenticate_user!`.
+- `ApplicationController` sets `@uncategorized_count` via `before_action` for the nav badge — don't re-query this in individual controllers.
 - Transaction queries always scope through `current_user` via: `Transaction.joins(:account).where(accounts: { user_id: current_user.id })`.
+- RecurringTransaction queries scope via: `RecurringTransaction.joins(:account).where(accounts: { user_id: current_user.id })`.
 - Account queries scope via `current_user.accounts`.
 - Categories, rules, tags are global (single-user app) — no user scoping needed.
 - Budgets are global (single-user) — document if multi-user is added later.
@@ -135,13 +155,14 @@ Account -< AccountBalance (historical snapshots)
 - Tables use alternating row colors, indigo action links.
 - Delete actions use `button_to` (not `link_to method: :delete`) for Turbo compatibility.
 - Pagy pagination via `<%== pagy_nav(@pagy) %>` — include on any list that could grow.
+- See `app/views/CLAUDE.md` for full design system reference.
 
 ### Testing
 - **RSpec** with FactoryBot. Factories in `spec/factories/`.
 - Devise test helpers included for request and system specs.
-- Model specs for all 10 models. Service specs for CsvAdapter, Categorizer, ImportProcessor.
-- Controller/request/system specs not yet written.
-- Run with `bundle exec rspec`. Test DB: `rubymoney_test`.
+- 12 model specs, 5 service specs, 7 request specs, 1 job spec.
+- 11 factory files covering all models.
+- Run with Docker test overlay (see Key Commands above).
 
 ### Database
 - PostgreSQL only. No SQLite, no MySQL.
@@ -149,31 +170,46 @@ Account -< AccountBalance (historical snapshots)
 - Deduplication index: `[account_id, source_fingerprint]` unique on transactions.
 - Budget uniqueness: `[category_id, month, year]`.
 - ImportProfile uniqueness: `[account_id, institution]`.
+- RecurringTransaction uniqueness: `[account_id, description_pattern]`.
 
 ## File Map
 
 ```
 app/
-  controllers/    # 9 controllers (application, dashboard, accounts, transactions,
-                  #   categories, budgets, rules, tags, imports)
-  models/         # 11 models (user, account, transaction, category, budget,
-                  #   tag, transaction_tag, rule, import, import_profile, account_balance)
-  views/          # 7 resource dirs + layouts + dashboard + shared
-  services/       # ImportProcessor, Categorizer, importers/ (BaseAdapter, CsvAdapter, OfxAdapter)
-  helpers/        # ApplicationHelper with Pagy::Frontend
-  jobs/           # ImportProcessJob (parse + confirm imports)
-  javascript/     # Importmap + Stimulus (controllers Phase 4+)
+  controllers/    # 11 controllers (application, dashboard, accounts, transactions,
+                  #   categories, budgets, rules, tags, imports, import_start,
+                  #   recurring_transactions)
+  models/         # 13 models (user, account, transaction, category, budget,
+                  #   tag, transaction_tag, rule, import, import_profile,
+                  #   account_balance, recurring_transaction, application_record)
+  views/          # 12 view dirs (accounts, budgets, categories, dashboard,
+                  #   import_start, imports, layouts, pwa, recurring_transactions,
+                  #   rules, tags, transactions)
+  services/       # ImportProcessor, Categorizer, RecurringDetector, TransferMatcher,
+                  #   importers/ (BaseAdapter, CsvAdapter, OfxAdapter)
+  helpers/        # ApplicationHelper (Pagy, format_cents, category_label,
+                  #   sort helpers, badge helpers for status/frequency/recurring)
+  jobs/           # ImportProcessJob, BalanceSnapshotJob, RecurringDetectionJob
+  javascript/     # Importmap + Stimulus controllers:
+                  #   chart, drilldown, bulk_select, inline_edit, nav_toggle
 config/
-  routes.rb       # All routes defined, some controller actions are stubs
+  routes.rb       # All routes: dashboard, accounts>imports, transactions,
+                  #   categories, budgets, rules, tags, recurring_transactions,
+                  #   import_start, good_job mount
+  application.rb  # good_job cron (balance_snapshot 2AM, recurring_detection 3AM)
   initializers/   # devise.rb, pagy.rb, standard Rails
 db/
-  schema.rb       # 12 tables (including good_job tables)
+  schema.rb       # 13 tables + good_job tables
   seeds.rb        # 15 categories + dev user
-  migrate/        # All Phase 1 migrations
+  migrate/        # All migrations through recurring_transactions
 spec/
-  models/         # 10 model specs
-  services/       # CsvAdapter, Categorizer, ImportProcessor specs
-  factories/      # 10 factory files
+  models/         # 12 model specs (all models including recurring_transaction)
+  services/       # 5 service specs (CsvAdapter, Categorizer, ImportProcessor,
+                  #   TransferMatcher, RecurringDetector)
+  requests/       # 7 request specs (dashboard, transactions, categories,
+                  #   budgets, rules, tags, recurring_transactions)
+  jobs/           # 1 job spec (BalanceSnapshotJob)
+  factories/      # 11 factory files (all models)
 ```
 
 ## What NOT to Do
@@ -185,3 +221,4 @@ spec/
 - Never add `:amount` as an enum value — AR conflict. Use `:amount_field`.
 - Never require Redis — use PostgreSQL-backed good_job for everything.
 - Never add Chartkick — Chart.js via Stimulus controllers only.
+- Never query `@uncategorized_count` in individual controllers — it's set in `ApplicationController`.

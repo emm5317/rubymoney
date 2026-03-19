@@ -11,6 +11,7 @@
 
 - All account queries scoped via `current_user.accounts`.
 - Transaction queries always join through accounts: `Transaction.joins(:account).where(accounts: { user_id: current_user.id })`.
+- RecurringTransaction queries join through accounts: `RecurringTransaction.joins(:account).where(accounts: { user_id: current_user.id })`.
 - Categories, rules, tags, and budgets are global (single-user design).
 
 ## Rails Security Defaults

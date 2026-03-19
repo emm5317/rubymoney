@@ -534,13 +534,56 @@ end
 
 ---
 
-### Phase 6 — Polish, Merchants & Export (Estimated: 3-4 sessions)
+### Phase 4.5 — UX Polish (COMPLETE)
 
-**Goal:** Production-quality UX, merchant normalization, data export, backup, and cleanup.
+**Completed features:**
+- [x] Budgets + Import in main navigation
+- [x] Uncategorized transaction count badge in nav (via ApplicationController before_action)
+- [x] Transaction text search (ILIKE on description/normalized_desc)
+- [x] Column sorting on transaction list (date, description, amount — with pagination param preservation)
+- [x] Rule test/preview (SQL-pushed matching for common types)
+- [x] Recent transactions + quick actions on dashboard
+- [x] Mobile hamburger nav toggle (Stimulus nav_toggle controller)
+- [x] CSV export with current filter support
+
+### Phase 4.6 — Recurring Transaction Detection (COMPLETE)
+
+**Completed features:**
+- [x] `RecurringTransaction` model (frequency, confidence, status, amount tracking)
+- [x] `RecurringDetector` service (interval analysis, frequency classification, confidence scoring)
+- [x] `RecurringDetectionJob` (daily cron at 3 AM via good_job)
+- [x] Full CRUD controller with confirm/dismiss/reactivate/detect_now/mark_recurring
+- [x] Dashboard partial showing top recurring charges with monthly total
+- [x] Recurring badge on transaction show page
+- [x] Nav link for Recurring section
+- [x] Model, service, and request specs
+
+### Phase 5 — PDF Import (Not yet started)
+
+**Goal:** Parse bank/credit card PDF statements into transactions using the same adapter interface.
 
 **Tasks:**
 
-- [ ] Transaction search — full-text search on description with pg_search gem
+- [ ] Evaluate PDF parsing: `pdf-reader` gem for text extraction, Tabula (via CLI wrapper) for table extraction
+- [ ] Implement `Importers::PdfTextExtractor` — extracts raw text from PDF
+- [ ] Implement `Importers::PdfTableParser` — identifies transaction tables in extracted text
+- [ ] Build at least one bank-specific PDF adapter (Chase credit card statement)
+- [ ] Generic PDF adapter with user-assisted field mapping for unknown formats
+- [ ] Handle multi-page statements (transactions spanning page breaks)
+- [ ] Error handling: flag rows that couldn't be parsed, show in import review
+- [ ] Side-by-side import review: show extracted data next to PDF preview for verification
+- [ ] Extract statement ending balance from PDF for reconciliation
+- [ ] PDF imports go through the same preview flow as CSV
+
+**Edge cases:** PDF statements are notoriously inconsistent. Plan for ~80% automation with manual review for the rest. Don't over-invest in perfection here.
+
+### Phase 6 — Polish, Merchants & Backup (Estimated: 3-4 sessions)
+
+**Goal:** Production-quality UX, merchant normalization, backup, and cleanup.
+
+**Tasks:**
+
+- [ ] Transaction search — upgrade to full-text search with pg_search gem (currently ILIKE, works but no ranking)
 - [ ] **Merchant normalization:**
   - Merchant extraction service (parse merchant name from transaction descriptions)
   - `MerchantsController` — CRUD, merge UI (combine "AMZN" and "AMAZON")
@@ -548,9 +591,7 @@ end
   - Top merchants dashboard updated to use merchants table
   - Default category assignment per merchant
 - [ ] Bulk import — drag-and-drop multiple files at once (CSV, OFX, QFX)
-- [ ] Export: monthly report to CSV
 - [ ] Export: spending summary to PDF (Prawn gem)
-- [ ] Recurring transaction detection — flag transactions that appear monthly with similar amounts
 - [ ] Duplicate review — surface potential duplicates across imports for manual resolution
 - [ ] Account reconciliation — compare running balance against imported statement balance, flag discrepancies
 - [ ] Data cleanup tools — merge categories, bulk re-categorize, edit normalized descriptions
@@ -559,9 +600,9 @@ end
   - Rake task `db:backup` running pg_dump with timestamped filename
   - good_job recurring job: daily backup, rotate keeping last 30
   - Configurable backup directory (default: `db/backups/`)
-- [ ] Mobile-responsive layout polish (Tailwind responsive utilities)
-- [ ] Error handling and flash messages throughout
 - [ ] System tests with Capybara for critical flows
+
+**Already done (moved to Phase 4.5/4.6):** CSV export, recurring transaction detection, mobile-responsive nav, text search, error handling/flash messages.
 
 **Key gems this phase:** pg_search, prawn, prawn-table
 
