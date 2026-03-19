@@ -9,6 +9,14 @@ class Budget < ApplicationRecord
   scope :for_month, ->(month, year) { where(month: month, year: year) }
   scope :for_date, ->(date) { where(month: date.month, year: date.year) }
 
+  def amount
+    amount_cents.to_i / 100.0
+  end
+
+  def amount=(dollars)
+    self.amount_cents = (BigDecimal(dollars.to_s) * 100).to_i
+  end
+
   def display_amount
     amount_cents / 100.0
   end

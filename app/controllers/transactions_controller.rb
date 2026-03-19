@@ -85,8 +85,11 @@ class TransactionsController < ApplicationController
       scope = scope.where("transactions.description ILIKE :q OR transactions.normalized_desc ILIKE :q", q: search_term)
     end
 
-    scope = scope.recent
-    @pagy, @transactions = pagy(scope)
+    sort_col = %w[date description amount_cents].include?(params[:sort]) ? params[:sort] : "date"
+    sort_dir = params[:direction] == "asc" ? "asc" : "desc"
+    @sort_column = sort_col
+    @sort_direction = sort_dir
+    @pagy, @transactions = pagy(scope.order("transactions.#{sort_col} #{sort_dir}"))
     @tags = Tag.sorted
   end
 

@@ -19,6 +19,12 @@ export default class extends Controller {
     this.updateBar()
   }
 
+  clearAll() {
+    this.checkboxTargets.forEach(cb => cb.checked = false)
+    if (this.hasSelectAllTarget) this.selectAllTarget.checked = false
+    this.updateBar()
+  }
+
   updateBar() {
     const selected = this.selectedIds()
     const count = selected.length

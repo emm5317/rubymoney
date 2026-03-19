@@ -7,7 +7,7 @@ class AccountsController < ApplicationController
   end
 
   def show
-    @recent_transactions = @account.transactions.includes(:category).order(date: :desc).limit(20)
+    @pagy, @recent_transactions = pagy(@account.transactions.includes(:category).order(date: :desc))
   end
 
   def new

@@ -41,7 +41,7 @@ module ApplicationHelper
 
   def sort_link(column, label, align_right: false)
     direction = (@sort_column == column.to_s && @sort_direction == "desc") ? "asc" : "desc"
-    link_to transactions_path(request.query_parameters.merge(sort: column, direction: direction)),
+    link_to url_for(request.query_parameters.merge(sort: column, direction: direction)),
            class: "group inline-flex items-center #{align_right ? 'justify-end' : ''}" do
       concat(label)
       concat(sort_indicator(column))

@@ -84,6 +84,6 @@ class BudgetsController < ApplicationController
   private
 
   def budget_params
-    params.require(:budget).permit(:category_id, :month, :year, :amount_cents, :notes)
+    params.require(:budget).permit(:category_id, :month, :year, :amount_cents, :amount, :notes)
   end
 end
