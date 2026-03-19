@@ -58,6 +58,11 @@ class DashboardController < ApplicationController
       .order(Arel.sql("SUM(amount_cents) ASC"))
       .limit(10)
       .sum(:amount_cents)
+
+    # Recent transactions (latest 5 across all accounts)
+    @recent_transactions = user_transactions
+      .includes(:account, :category)
+      .recent.limit(5)
   end
 
   def drilldown

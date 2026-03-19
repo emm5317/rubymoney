@@ -1,0 +1,27 @@
+<div class="max-w-2xl mx-auto px-4 py-8">
+  <h1 class="text-2xl font-bold text-gray-900 mb-6">Import Statement</h1>
+
+  <div class="bg-white shadow rounded-lg p-6">
+    <p class="text-sm text-gray-500 mb-4">Select an account to import transactions into:</p>
+
+    <div class="space-y-3">
+      <% @accounts.each do |account| %>
+        <%= link_to new_account_import_path(account), class: "block p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-indigo-300 transition-colors" do %>
+          <div class="flex justify-between items-center">
+            <div>
+              <p class="font-medium text-gray-900"><%= account.name %></p>
+              <p class="text-sm text-gray-500"><%= account.institution %> &middot; <%= account.account_type.titleize %></p>
+            </div>
+            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="mt-4">
+    <%= link_to "Back to Dashboard", authenticated_root_path, class: "text-indigo-600 hover:text-indigo-900 text-sm" %>
+  </div>
+</div>

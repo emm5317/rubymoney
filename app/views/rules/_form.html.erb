@@ -60,8 +60,38 @@
       </label>
     </div>
 
-    <div>
+    <div class="flex items-center space-x-3">
       <%= f.submit class: "inline-flex items-center px-4 py-2 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700 cursor-pointer" %>
     </div>
+  <% end %>
+</div>
+
+<div class="bg-white shadow rounded-lg p-6 mt-6">
+  <h3 class="text-lg font-semibold text-gray-900 mb-4">Test Rule</h3>
+  <p class="text-sm text-gray-500 mb-4">Preview which existing transactions would match this rule.</p>
+  <%= form_with(url: preview_rules_path, method: :post, data: { turbo_frame: "rule-preview" }, class: "space-y-4") do |pf| %>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Match Field</label>
+        <%= select_tag "rule[match_field]", options_for_select([["Description", "description"], ["Normalized Description", "normalized_desc"], ["Amount", "amount_field"]], rule.match_field), class: "block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500" %>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Match Type</label>
+        <%= select_tag "rule[match_type]", options_for_select([["Contains", "contains"], ["Exact", "exact"], ["Starts With", "starts_with"], ["Regex", "regex"], ["Greater Than", "gt"], ["Less Than", "lt"], ["Between", "between"]], rule.match_type), class: "block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500" %>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Match Value</label>
+        <%= text_field_tag "rule[match_value]", rule.match_value, placeholder: "e.g. STARBUCKS", class: "block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500" %>
+      </div>
+    </div>
+    <%= hidden_field_tag "rule[match_value_upper]", rule.match_value_upper %>
+    <%= hidden_field_tag "rule[category_id]", rule.category_id %>
+    <%= hidden_field_tag "rule[priority]", rule.priority || 0 %>
+    <div>
+      <%= submit_tag "Test Rule", class: "inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50 cursor-pointer" %>
+    </div>
+  <% end %>
+
+  <%= turbo_frame_tag "rule-preview" do %>
   <% end %>
 </div>

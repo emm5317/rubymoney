@@ -20,27 +20,58 @@
 
   <body class="h-full">
     <% if user_signed_in? %>
-      <nav class="bg-indigo-700">
+      <nav class="bg-indigo-700" data-controller="nav-toggle">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex items-center justify-between h-16">
-            <div class="flex items-center space-x-1">
+            <div class="flex items-center">
               <%= link_to "Finance Reconciler", authenticated_root_path, class: "text-white font-bold text-lg mr-4" %>
               <% nav_items = [
                 ["Dashboard", authenticated_root_path, "dashboard"],
                 ["Accounts", accounts_path, "accounts"],
                 ["Transactions", transactions_path, "transactions"],
                 ["Categories", categories_path, "categories"],
+                ["Budgets", budgets_path, "budgets"],
                 ["Rules", rules_path, "rules"],
                 ["Tags", tags_path, "tags"],
+                ["Import", import_start_path, "import_start"],
               ] %>
-              <% nav_items.each do |label, path, controller_name| %>
-                <% active = controller.controller_name == controller_name %>
-                <%= link_to label, path, class: "px-3 py-2 rounded-md text-sm font-medium #{active ? 'bg-indigo-800 text-white' : 'text-indigo-200 hover:text-white hover:bg-indigo-600'}" %>
-              <% end %>
+              <div class="hidden sm:flex items-center space-x-1">
+                <% nav_items.each do |label, path, controller_name| %>
+                  <% active = controller.controller_name == controller_name %>
+                  <%= link_to path, class: "px-3 py-2 rounded-md text-sm font-medium #{active ? 'bg-indigo-800 text-white' : 'text-indigo-200 hover:text-white hover:bg-indigo-600'}" do %>
+                    <%= label %>
+                    <% if label == "Transactions" && @uncategorized_count.to_i > 0 %>
+                      <span class="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium rounded-full bg-yellow-400 text-yellow-900"><%= @uncategorized_count %></span>
+                    <% end %>
+                  <% end %>
+                <% end %>
+              </div>
             </div>
             <div class="flex items-center space-x-4">
-              <span class="text-indigo-200 text-sm"><%= current_user.email %></span>
-              <%= button_to "Sign Out", destroy_user_session_path, method: :delete, class: "text-indigo-200 hover:text-white text-sm font-medium" %>
+              <span class="text-indigo-200 text-sm hidden sm:inline"><%= current_user.email %></span>
+              <%= button_to "Sign Out", destroy_user_session_path, method: :delete, class: "text-indigo-200 hover:text-white text-sm font-medium hidden sm:inline-flex" %>
+              <button type="button" data-action="click->nav-toggle#toggle" class="sm:hidden text-indigo-200 hover:text-white">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="hidden sm:hidden border-t border-indigo-600" data-nav-toggle-target="menu">
+          <div class="px-4 py-3 space-y-1">
+            <% nav_items.each do |label, path, controller_name| %>
+              <% active = controller.controller_name == controller_name %>
+              <%= link_to path, class: "block px-3 py-2 rounded-md text-sm font-medium #{active ? 'bg-indigo-800 text-white' : 'text-indigo-200 hover:text-white hover:bg-indigo-600'}" do %>
+                <%= label %>
+                <% if label == "Transactions" && @uncategorized_count.to_i > 0 %>
+                  <span class="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium rounded-full bg-yellow-400 text-yellow-900"><%= @uncategorized_count %></span>
+                <% end %>
+              <% end %>
+            <% end %>
+            <div class="pt-2 border-t border-indigo-600">
+              <span class="block px-3 py-1 text-indigo-200 text-sm"><%= current_user.email %></span>
+              <%= button_to "Sign Out", destroy_user_session_path, method: :delete, class: "px-3 py-2 text-indigo-200 hover:text-white text-sm font-medium" %>
             </div>
           </div>
         </div>

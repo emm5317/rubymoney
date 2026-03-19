@@ -22,7 +22,7 @@ module ApplicationHelper
   end
 
   def filter_active?
-    %i[account_id category_id type date_from date_to].any? { |k| params[k].present? }
+    %i[account_id category_id type date_from date_to search].any? { |k| params[k].present? }
   end
 
   def format_cents(cents)
@@ -37,6 +37,21 @@ module ApplicationHelper
     else
       "bg-red-500"
     end
+  end
+
+  def sort_link(column, label, align_right: false)
+    direction = (@sort_column == column.to_s && @sort_direction == "desc") ? "asc" : "desc"
+    link_to transactions_path(request.query_parameters.merge(sort: column, direction: direction)),
+           class: "group inline-flex items-center #{align_right ? 'justify-end' : ''}" do
+      concat(label)
+      concat(sort_indicator(column))
+    end
+  end
+
+  def sort_indicator(column)
+    return "".html_safe unless @sort_column == column.to_s
+    arrow = @sort_direction == "asc" ? "↑" : "↓"
+    content_tag(:span, arrow, class: "ml-1 text-indigo-600 font-bold")
   end
 
   def transaction_status_badge(status)

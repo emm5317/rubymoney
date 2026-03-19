@@ -47,6 +47,41 @@ class RulesController < ApplicationController
     redirect_to rules_path, notice: "Rule deleted."
   end
 
+  def preview
+    rule = Rule.new(rule_params)
+    scope = Transaction.joins(:account)
+      .where(accounts: { user_id: current_user.id })
+      .includes(:account)
+      .order(date: :desc)
+
+    field_map = { "description" => "transactions.description", "normalized_desc" => "transactions.normalized_desc", "amount_field" => "transactions.amount_cents" }
+    db_field = field_map[rule.match_field.to_s]
+
+    case rule.match_type.to_s
+    when "contains"
+      term = "%#{Transaction.sanitize_sql_like(rule.match_value.to_s)}%"
+      scope = scope.where("#{db_field} ILIKE ?", term)
+    when "exact"
+      scope = scope.where("#{db_field} ILIKE ?", rule.match_value.to_s)
+    when "starts_with"
+      term = "#{Transaction.sanitize_sql_like(rule.match_value.to_s)}%"
+      scope = scope.where("#{db_field} ILIKE ?", term)
+    when "gt"
+      scope = scope.where("#{db_field} > ?", rule.match_value.to_i)
+    when "lt"
+      scope = scope.where("#{db_field} < ?", rule.match_value.to_i)
+    when "between"
+      scope = scope.where("#{db_field} BETWEEN ? AND ?", rule.match_value.to_i, rule.match_value_upper.to_i)
+    when "regex"
+      scope = scope.limit(500)
+      @matching = scope.select { |txn| rule.matches?(txn) }.first(20)
+    end
+
+    @matching ||= scope.limit(20).to_a
+
+    render inline: "<%= turbo_frame_tag 'rule-preview' do %><%= render partial: 'rules/preview_results', locals: { transactions: @matching } %><% end %>", layout: false
+  end
+
   private
 
   def set_rule

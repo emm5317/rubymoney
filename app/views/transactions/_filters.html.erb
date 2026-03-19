@@ -1,5 +1,13 @@
 <div class="bg-white shadow rounded-lg p-4 mb-6">
   <%= form_with(url: transactions_path, method: :get, class: "flex flex-wrap items-end gap-4", data: { turbo_frame: "_top" }) do |f| %>
+    <%= hidden_field_tag :sort, params[:sort] if params[:sort].present? %>
+    <%= hidden_field_tag :direction, params[:direction] if params[:direction].present? %>
+
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">Search</label>
+      <%= text_field_tag :search, params[:search], placeholder: "Search descriptions...", class: "rounded-md border-gray-300 shadow-sm text-sm py-1.5 focus:border-indigo-500 focus:ring-indigo-500" %>
+    </div>
+
     <div>
       <label class="block text-xs font-medium text-gray-500 mb-1">Account</label>
       <%= select_tag :account_id, options_from_collection_for_select(current_user.accounts, :id, :name, params[:account_id]), include_blank: "All Accounts", class: "rounded-md border-gray-300 shadow-sm text-sm py-1.5 focus:border-indigo-500 focus:ring-indigo-500" %>

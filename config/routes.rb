@@ -45,8 +45,15 @@ Rails.application.routes.draw do
       post :copy_previous
     end
   end
-  resources :rules
+  resources :rules do
+    collection do
+      post :preview
+    end
+  end
   resources :tags
+
+  # Top-level import shortcut
+  get "import", to: "import_start#index", as: :import_start
 
   # Health check
   get "up" => "rails/health#show", as: :rails_health_check

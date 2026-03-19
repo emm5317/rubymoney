@@ -18,7 +18,16 @@ class TransactionsController < ApplicationController
     scope = scope.where("transactions.date >= ?", params[:date_from]) if params[:date_from].present?
     scope = scope.where("transactions.date <= ?", params[:date_to]) if params[:date_to].present?
 
-    @pagy, @transactions = pagy(scope.recent)
+    if params[:search].present?
+      search_term = "%#{Transaction.sanitize_sql_like(params[:search])}%"
+      scope = scope.where("transactions.description ILIKE :q OR transactions.normalized_desc ILIKE :q", q: search_term)
+    end
+
+    sort_col = %w[date description amount_cents].include?(params[:sort]) ? params[:sort] : "date"
+    sort_dir = params[:direction] == "asc" ? "asc" : "desc"
+    @sort_column = sort_col
+    @sort_direction = sort_dir
+    @pagy, @transactions = pagy(scope.order("transactions.#{sort_col} #{sort_dir}"))
     @tags = Tag.sorted
   end
 
@@ -70,7 +79,13 @@ class TransactionsController < ApplicationController
       .where(accounts: { user_id: current_user.id })
       .uncategorized
       .includes(:account, :tags)
-      .recent
+
+    if params[:search].present?
+      search_term = "%#{Transaction.sanitize_sql_like(params[:search])}%"
+      scope = scope.where("transactions.description ILIKE :q OR transactions.normalized_desc ILIKE :q", q: search_term)
+    end
+
+    scope = scope.recent
     @pagy, @transactions = pagy(scope)
     @tags = Tag.sorted
   end
