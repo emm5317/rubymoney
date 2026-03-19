@@ -50,6 +50,9 @@ class ImportProcessor
     # Auto-categorize newly imported transactions
     categorized = Categorizer.new.categorize_batch(import.transactions.uncategorized)
 
+    # Auto-detect and link unambiguous transfer pairs
+    transfers_linked = TransferMatcher.new.detect_transfers(import.transactions.reload, user: account.user)
+
     import.update!(
       status: :completed,
       imported_count: imported,
@@ -65,7 +68,7 @@ class ImportProcessor
     # Learn column mapping from this import if CSV
     learn_profile if import.csv?
 
-    { imported: imported, skipped: skipped, errors: errors.size, categorized: categorized }
+    { imported: imported, skipped: skipped, errors: errors.size, categorized: categorized, transfers_linked: transfers_linked }
   end
 
   private

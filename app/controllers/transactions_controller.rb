@@ -19,6 +19,7 @@ class TransactionsController < ApplicationController
     scope = scope.where("transactions.date <= ?", params[:date_to]) if params[:date_to].present?
 
     @pagy, @transactions = pagy(scope.recent)
+    @tags = Tag.sorted
   end
 
   def show
@@ -68,9 +69,10 @@ class TransactionsController < ApplicationController
     scope = Transaction.joins(:account)
       .where(accounts: { user_id: current_user.id })
       .uncategorized
-      .includes(:account)
+      .includes(:account, :tags)
       .recent
     @pagy, @transactions = pagy(scope)
+    @tags = Tag.sorted
   end
 
   def categorize
@@ -83,6 +85,21 @@ class TransactionsController < ApplicationController
           "transaction_#{@transaction.id}_category",
           partial: "transactions/category_cell",
           locals: { transaction: @transaction.reload }
+        )
+      end
+    end
+  end
+
+  def update_tags
+    @transaction = find_transaction
+    @transaction.tag_ids = Array(params[:tag_ids]).reject(&:blank?).map(&:to_i)
+    respond_to do |format|
+      format.html { redirect_back fallback_location: transactions_path, notice: "Tags updated." }
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.replace(
+          "transaction_#{@transaction.id}_tags",
+          partial: "transactions/tag_cell",
+          locals: { transaction: @transaction, tags: Tag.sorted }
         )
       end
     end

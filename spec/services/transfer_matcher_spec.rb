@@ -62,6 +62,48 @@ RSpec.describe TransferMatcher do
     end
   end
 
+  describe "#detect_transfers" do
+    let!(:debit) do
+      create(:transaction, account: checking, amount_cents: -50000, date: Date.new(2026, 3, 10), description: "Transfer to Savings")
+    end
+
+    it "auto-links unambiguous transfer pair" do
+      credit = create(:transaction, account: savings, amount_cents: 50000, date: Date.new(2026, 3, 10), description: "Transfer from Checking")
+      linked = matcher.detect_transfers([debit], user: user)
+
+      expect(linked).to eq(1)
+      expect(debit.reload.is_transfer).to be true
+      expect(credit.reload.is_transfer).to be true
+      expect(debit.transfer_pair_id).to eq(credit.id)
+    end
+
+    it "skips when multiple candidates exist (ambiguous)" do
+      create(:transaction, account: savings, amount_cents: 50000, date: Date.new(2026, 3, 10), description: "Transfer A")
+      create(:transaction, account: savings, amount_cents: 50000, date: Date.new(2026, 3, 11), description: "Transfer B")
+      linked = matcher.detect_transfers([debit], user: user)
+
+      expect(linked).to eq(0)
+      expect(debit.reload.is_transfer).to be false
+    end
+
+    it "skips transactions already marked as transfers" do
+      create(:transaction, account: savings, amount_cents: 50000, date: Date.new(2026, 3, 10), description: "Transfer from Checking")
+      debit.update!(is_transfer: true)
+      linked = matcher.detect_transfers([debit], user: user)
+
+      expect(linked).to eq(0)
+    end
+
+    it "returns count of linked pairs" do
+      credit = create(:transaction, account: savings, amount_cents: 50000, date: Date.new(2026, 3, 10), description: "Transfer from Checking")
+      debit2 = create(:transaction, account: checking, amount_cents: -25000, date: Date.new(2026, 3, 12), description: "Another transfer")
+      credit2 = create(:transaction, account: savings, amount_cents: 25000, date: Date.new(2026, 3, 12), description: "Another transfer in")
+      linked = matcher.detect_transfers([debit, debit2], user: user)
+
+      expect(linked).to eq(2)
+    end
+  end
+
   describe "#link!" do
     let!(:debit) { create(:transaction, account: checking, amount_cents: -50000, date: Date.new(2026, 3, 10)) }
     let!(:credit) { create(:transaction, account: savings, amount_cents: 50000, date: Date.new(2026, 3, 10)) }

@@ -1,0 +1,40 @@
+<%= turbo_frame_tag "transaction_#{transaction.id}_tags" do %>
+  <div data-controller="inline-edit">
+    <div data-inline-edit-target="display" class="cursor-pointer" data-action="click->inline-edit#toggle">
+      <% if transaction.tags.any? %>
+        <div class="flex flex-wrap gap-1">
+          <% transaction.tags.each do |tag| %>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="background-color: <%= tag.color %>20; color: <%= tag.color %>;">
+              <%= tag.name %>
+            </span>
+          <% end %>
+        </div>
+      <% else %>
+        <span class="text-gray-400 italic">None</span>
+      <% end %>
+    </div>
+    <div data-inline-edit-target="form" class="hidden">
+      <%= form_with(url: update_tags_transaction_path(transaction), method: :patch) do |f| %>
+        <div class="flex flex-col gap-1 py-1">
+          <% tags.each do |tag| %>
+            <label class="inline-flex items-center cursor-pointer">
+              <input type="checkbox" name="tag_ids[]" value="<%= tag.id %>"
+                     <%= "checked" if transaction.tag_ids.include?(tag.id) %>
+                     class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+              <span class="ml-1.5 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="background-color: <%= tag.color %>20; color: <%= tag.color %>;">
+                <%= tag.name %>
+              </span>
+            </label>
+          <% end %>
+          <% if tags.empty? %>
+            <span class="text-xs text-gray-400">No tags defined</span>
+          <% end %>
+          <div class="flex space-x-2 mt-1">
+            <button type="submit" class="px-2 py-1 bg-indigo-600 text-white text-xs font-medium rounded hover:bg-indigo-700">Save</button>
+            <button type="button" class="px-2 py-1 text-gray-600 text-xs font-medium rounded hover:bg-gray-100" data-action="click->inline-edit#cancel">Cancel</button>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

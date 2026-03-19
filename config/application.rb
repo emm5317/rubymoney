@@ -43,5 +43,13 @@ module Rubymoney
     config.good_job.retry_on_unhandled_error = false
     config.good_job.on_thread_error = ->(exception) { Rails.logger.error(exception) }
     config.good_job.execution_mode = :async
+    config.good_job.enable_cron = true
+    config.good_job.cron = {
+      balance_snapshot: {
+        cron: "0 2 * * *", # Daily at 2 AM
+        class: "BalanceSnapshotJob",
+        description: "Record daily account balance snapshots for net worth tracking"
+      }
+    }
   end
 end

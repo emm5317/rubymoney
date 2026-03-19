@@ -1,0 +1,16 @@
+services:
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: rubymoney-test
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/rails
+    environment:
+      RAILS_ENV: test
+      DATABASE_URL: postgres://rubymoney:rubymoney@db:5432/rubymoney_test
+      RAILS_MASTER_KEY: 7aa1034a6dedf564a32b521a6006fb18
+    command: bash -c "bin/rails db:drop db:create db:migrate && SECRET_KEY_BASE_DUMMY=1 bin/rails assets:precompile && bundle exec rspec"

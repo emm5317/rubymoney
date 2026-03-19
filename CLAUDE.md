@@ -12,15 +12,39 @@ Personal finance app: import bank/credit card statements, categorize transaction
 
 **Phase 2 complete** — Import pipeline (CSV + OFX adapters, ImportProcessor, Categorizer, preview/confirm flow, deduplication). See BUILD_PLAN.md for full roadmap.
 
-**Not yet built:** Chart.js dashboards, PDF import, transfer matching service, recurring detection, export.
+**Phase 3 complete** — Categorization, tags, manual entry, transfer detection, inline editing, bulk operations, request specs for all Phase 3 controllers.
+
+**Phase 4 complete** — Dashboard charts (category spending, monthly trends, budget progress, tag spending, period navigation, drilldown, income vs. expenses area chart, net worth over time, top merchants, accounts overview with net worth total, BalanceSnapshotJob daily cron).
+
+**Not yet built:** PDF import (Phase 5), merchant normalization, recurring detection, export, pg_search, automated backup (Phase 6).
+
+## Development Environment
+
+**Ruby runs inside Docker** — there is no local Ruby installation. Always use `docker compose` to start the app, run Rails commands, and execute tests. Do NOT attempt `bin/rails` or `bundle exec` directly on the host.
 
 ## Key Commands
 
 ```bash
-bin/rails server                 # Start dev server (good_job runs inline)
-bin/rails db:seed                # Seed default categories + dev user
-bundle exec rspec                # Run test suite
-RAILS_ENV=test bin/rails db:prepare  # Prepare test database
+docker compose up -d --build                    # Start app (port 3030)
+docker compose exec web bin/rails db:seed       # Seed default categories + dev user
+docker compose exec web bin/rails console       # Rails console
+docker compose logs -f web                      # View app logs
+```
+
+### Running Tests
+
+The production Docker image does not include test gems. Use `docker-compose.test.yml` to run RSpec:
+
+```bash
+# First run (builds test image, creates DB, precompiles assets, runs specs):
+docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test
+
+# Subsequent runs (reuse built image, run specific specs):
+docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test \
+  bash -c "bundle exec rspec spec/requests/"
+
+# Rebuild test image after Gemfile changes:
+docker compose -f docker-compose.yml -f docker-compose.test.yml build test
 ```
 
 **Dev login:** admin@example.com / password123

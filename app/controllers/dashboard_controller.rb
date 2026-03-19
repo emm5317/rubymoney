@@ -35,6 +35,29 @@ class DashboardController < ApplicationController
       .joins(:tags)
       .group("tags.id", "tags.name", "tags.color")
       .sum(:amount_cents)
+
+    # Net worth
+    @net_worth = @accounts.sum(:current_balance_cents)
+
+    # Net worth over time (from account_balances snapshots)
+    @net_worth_history = AccountBalance
+      .joins(account: :user)
+      .where(accounts: { user_id: current_user.id })
+      .where("account_balances.date >= ?", 6.months.ago.to_date)
+      .group(:date)
+      .order(:date)
+      .sum(:balance_cents)
+
+    # Income vs expenses area chart (last 6 months, same data as trends)
+    @income_vs_expenses = { income: @monthly_income, expenses: @monthly_expenses }
+
+    # Top merchants (by normalized_desc, top 10 by total spend this month)
+    @top_merchants = month_txns.debits
+      .where.not(normalized_desc: [nil, ""])
+      .group(:normalized_desc)
+      .order(Arel.sql("SUM(amount_cents) ASC"))
+      .limit(10)
+      .sum(:amount_cents)
   end
 
   def drilldown

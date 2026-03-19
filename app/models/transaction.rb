@@ -30,7 +30,7 @@ class Transaction < ApplicationRecord
   scope :recent, -> { order(date: :desc) }
 
   def amount
-    amount_cents / 100.0
+    amount_cents&./(100.0)
   end
 
   def amount=(val)

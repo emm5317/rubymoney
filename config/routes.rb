@@ -27,6 +27,7 @@ Rails.application.routes.draw do
   resources :transactions do
     member do
       patch :categorize
+      patch :update_tags
       post  :create_rule
       post  :link_transfer
       delete :unlink_transfer

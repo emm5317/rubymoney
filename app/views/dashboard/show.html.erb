@@ -11,24 +11,16 @@
     </div>
 
     <%= render "transactions_drilldown" %>
-    <%= render "budget_progress" %>
-    <%= render "tag_spending" %>
 
-    <h3 class="text-lg font-semibold text-gray-900 mb-4">Accounts</h3>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <% @accounts.each do |account| %>
-        <%= link_to account_path(account), class: "block bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow" do %>
-          <p class="text-xs font-medium text-gray-400 uppercase tracking-wide"><%= account.institution %></p>
-          <p class="text-lg font-semibold text-gray-900 mt-1"><%= account.name %></p>
-          <p class="text-2xl font-bold mt-2 <%= account.current_balance_cents >= 0 ? 'text-green-600' : 'text-red-600' %>">
-            <%= number_to_currency(account.balance) %>
-          </p>
-          <span class="inline-block mt-3 px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
-            <%= account.account_type.titleize %>
-          </span>
-        <% end %>
-      <% end %>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <%= render "income_vs_expenses" %>
+      <%= render "net_worth_chart" %>
     </div>
+
+    <%= render "budget_progress" %>
+    <%= render "top_merchants" %>
+    <%= render "tag_spending" %>
+    <%= render "accounts_overview" %>
   <% else %>
     <div class="text-center py-12 bg-white rounded-lg shadow p-8">
       <h3 class="text-lg font-medium text-gray-900">Welcome to Finance Reconciler</h3>

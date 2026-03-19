@@ -80,6 +80,8 @@ RSpec.describe "Dashboard", type: :request do
     end
 
     context "period navigation" do
+      before { account } # ensure account exists so dashboard renders full layout
+
       it "defaults to current month" do
         get dashboard_path
         expect(response.body).to include(Date.current.strftime("%B %Y"))
@@ -126,6 +128,58 @@ RSpec.describe "Dashboard", type: :request do
       it "does not show budget section when no budgets" do
         get dashboard_path
         expect(response.body).not_to include("Budget vs. Actual")
+      end
+    end
+  end
+
+  describe "new Phase 4 features" do
+    context "accounts overview and net worth" do
+      it "shows net worth total" do
+        account.update!(current_balance_cents: 250_000)
+        create(:account, user: user, name: "Savings", current_balance_cents: 500_000)
+        get dashboard_path
+        expect(response.body).to include("Net Worth")
+        expect(response.body).to include("$7,500.00")
+      end
+
+      it "shows account cards" do
+        account # create account
+        get dashboard_path
+        expect(response.body).to include(account.name)
+        expect(response.body).to include(account.institution)
+      end
+    end
+
+    context "top merchants" do
+      it "shows top merchants when transactions exist" do
+        create(:transaction, account: account, transaction_type: :debit,
+               amount_cents: 5000, date: Date.current, description: "STARBUCKS #1234")
+        get dashboard_path
+        expect(response.body).to include("Top Merchants")
+      end
+    end
+
+    context "income vs expenses chart" do
+      it "shows income vs expenses section" do
+        create(:transaction, account: account, transaction_type: :debit,
+               amount_cents: 5000, date: Date.current)
+        get dashboard_path
+        expect(response.body).to include("Income vs. Expenses")
+      end
+    end
+
+    context "net worth chart" do
+      it "shows empty state when no balance history" do
+        account
+        get dashboard_path
+        expect(response.body).to include("No balance history yet")
+      end
+
+      it "shows chart when balance history exists" do
+        create(:account_balance, account: account, date: 1.month.ago.to_date, balance_cents: 100_000)
+        create(:account_balance, account: account, date: Date.current, balance_cents: 150_000)
+        get dashboard_path
+        expect(response.body).to include("Net Worth Over Time")
       end
     end
   end

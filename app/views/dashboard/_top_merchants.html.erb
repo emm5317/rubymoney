@@ -1,0 +1,22 @@
+<% if @top_merchants.any? %>
+  <div class="bg-white shadow rounded-lg p-6 mb-8">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Top Merchants</h3>
+
+    <div class="space-y-3">
+      <% max_spend = @top_merchants.values.map(&:abs).max %>
+      <% @top_merchants.each do |desc, cents| %>
+        <div class="flex items-center justify-between">
+          <div class="flex-1 mr-4">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-sm font-medium text-gray-900 truncate"><%= desc.titleize %></span>
+              <span class="text-sm font-semibold text-red-600 ml-2"><%= number_to_currency(cents.abs / 100.0) %></span>
+            </div>
+            <div class="w-full bg-gray-100 rounded-full h-2">
+              <div class="bg-indigo-500 h-2 rounded-full" style="width: <%= (cents.abs.to_f / max_spend.abs * 100).round %>%"></div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

@@ -21,6 +21,20 @@ class TransferMatcher
       .limit(10)
   end
 
+  # Auto-detect and link transfers among newly imported transactions.
+  # Only links unambiguous matches (exactly one candidate found).
+  def detect_transfers(transactions, user:)
+    linked = 0
+    transactions.reject(&:is_transfer?).each do |txn|
+      candidates = find_candidates(txn, user: user)
+      next unless candidates.size == 1
+
+      link!(txn, candidates.first)
+      linked += 1
+    end
+    linked
+  end
+
   # Link two transactions as a transfer pair.
   def link!(transaction_a, transaction_b)
     Transaction.transaction do

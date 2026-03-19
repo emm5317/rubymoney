@@ -1,0 +1,26 @@
+<div class="mb-8">
+  <div class="flex justify-between items-center mb-4">
+    <h3 class="text-lg font-semibold text-gray-900">Accounts</h3>
+    <div class="text-right">
+      <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Net Worth</p>
+      <p class="text-2xl font-bold <%= @net_worth >= 0 ? 'text-green-600' : 'text-red-600' %>">
+        <%= number_to_currency(@net_worth / 100.0) %>
+      </p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <% @accounts.each do |account| %>
+      <%= link_to account_path(account), class: "block bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow" do %>
+        <p class="text-xs font-medium text-gray-400 uppercase tracking-wide"><%= account.institution %></p>
+        <p class="text-lg font-semibold text-gray-900 mt-1"><%= account.name %></p>
+        <p class="text-2xl font-bold mt-2 <%= account.current_balance_cents >= 0 ? 'text-green-600' : 'text-red-600' %>">
+          <%= number_to_currency(account.balance) %>
+        </p>
+        <span class="inline-block mt-3 px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
+          <%= account.account_type.titleize %>
+        </span>
+      <% end %>
+    <% end %>
+  </div>
+</div>

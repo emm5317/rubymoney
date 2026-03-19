@@ -1,0 +1,54 @@
+<div class="bg-white shadow rounded-lg p-6">
+  <h3 class="text-lg font-semibold text-gray-900 mb-4">Net Worth Over Time</h3>
+
+  <% if @net_worth_history.any? %>
+    <%
+      labels = @net_worth_history.keys.map { |d| d.strftime("%b %d") }
+      data = @net_worth_history.values
+
+      config = {
+        type: "line",
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: "Net Worth",
+              data: data,
+              borderColor: "#4F46E5",
+              backgroundColor: "rgba(79, 70, 229, 0.1)",
+              fill: true,
+              tension: 0.3,
+              pointRadius: 2,
+              pointBackgroundColor: "#4F46E5",
+              borderWidth: 2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              ticks: { callback: "currency" }
+            }
+          },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      }
+    %>
+
+    <div data-controller="chart"
+         data-chart-config-value="<%= config.to_json %>"
+         data-chart-currency-value="true"
+         class="relative" style="height: 300px;">
+      <canvas></canvas>
+    </div>
+  <% else %>
+    <div class="text-center py-12">
+      <p class="text-gray-500">No balance history yet.</p>
+      <p class="text-sm text-gray-400 mt-1">Daily snapshots will build your net worth chart over time.</p>
+    </div>
+  <% end %>
+</div>

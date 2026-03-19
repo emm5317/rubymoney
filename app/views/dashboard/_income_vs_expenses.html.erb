@@ -1,0 +1,63 @@
+<div class="bg-white shadow rounded-lg p-6">
+  <h3 class="text-lg font-semibold text-gray-900 mb-4">Income vs. Expenses</h3>
+
+  <% if @monthly_income.any? || @monthly_expenses.any? %>
+    <%
+      all_months = (@monthly_income.keys + @monthly_expenses.keys).uniq.sort
+      labels = all_months.map { |d| d.strftime("%b %Y") }
+
+      config = {
+        type: "line",
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: "Income",
+              data: all_months.map { |d| @monthly_income[d] || 0 },
+              borderColor: "#16a34a",
+              backgroundColor: "rgba(22, 163, 106, 0.1)",
+              fill: true,
+              tension: 0.3,
+              pointRadius: 4,
+              pointBackgroundColor: "#16a34a"
+            },
+            {
+              label: "Expenses",
+              data: all_months.map { |d| @monthly_expenses[d] || 0 },
+              borderColor: "#dc2626",
+              backgroundColor: "rgba(220, 38, 38, 0.1)",
+              fill: true,
+              tension: 0.3,
+              pointRadius: 4,
+              pointBackgroundColor: "#dc2626"
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { callback: "currency" }
+            }
+          },
+          plugins: {
+            legend: { position: "bottom", labels: { padding: 16, usePointStyle: true } }
+          }
+        }
+      }
+    %>
+
+    <div data-controller="chart"
+         data-chart-config-value="<%= config.to_json %>"
+         data-chart-currency-value="true"
+         class="relative" style="height: 300px;">
+      <canvas></canvas>
+    </div>
+  <% else %>
+    <div class="text-center py-12">
+      <p class="text-gray-500">No transaction data yet.</p>
+    </div>
+  <% end %>
+</div>
