@@ -1,0 +1,59 @@
+<div class="bg-white shadow rounded-lg p-6">
+  <h3 class="text-lg font-semibold text-gray-900 mb-4">Spending by Category</h3>
+
+  <% if @category_spending.any? %>
+    <%
+      sorted = @category_spending.sort_by { |_, v| -v }
+      top = sorted.first(8)
+      other_total = sorted.drop(8).sum { |_, v| v }
+
+      labels = top.map { |cat_id, _| cat_id ? @categories_map[cat_id]&.name || "Unknown" : "Uncategorized" }
+      colors = top.map { |cat_id, _| cat_id ? (@categories_map[cat_id]&.color || "#6366f1") : "#9ca3af" }
+      data = top.map { |_, v| v }
+      drilldown_ids = top.map { |cat_id, _| cat_id }
+
+      if other_total > 0
+        labels << "Other"
+        colors << "#d1d5db"
+        data << other_total
+        drilldown_ids << nil
+      end
+
+      config = {
+        type: "doughnut",
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: colors,
+            borderWidth: 1,
+            borderColor: "#ffffff"
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: "bottom", labels: { padding: 16, usePointStyle: true } }
+          }
+        }
+      }
+    %>
+
+    <div data-controller="chart drilldown"
+         data-chart-config-value="<%= config.to_json %>"
+         data-drilldown-url-value="<%= drilldown_dashboard_path %>"
+         data-drilldown-ids-value="<%= drilldown_ids.to_json %>"
+         data-drilldown-month-value="<%= @date.month %>"
+         data-drilldown-year-value="<%= @date.year %>"
+         data-action="chart:click->drilldown#onChartClick"
+         class="relative" style="height: 300px;">
+      <canvas></canvas>
+    </div>
+  <% else %>
+    <div class="text-center py-12">
+      <p class="text-gray-500">No spending data for this month.</p>
+      <p class="text-sm text-gray-400 mt-1">Import a statement to see your spending breakdown.</p>
+    </div>
+  <% end %>
+</div>

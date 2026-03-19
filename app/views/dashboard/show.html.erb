@@ -1,8 +1,21 @@
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="max-w-7xl mx-auto px-4 py-8">
   <h1 class="text-2xl font-bold text-gray-900 mb-6">Dashboard</h1>
 
   <% if @accounts.any? %>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <%= render "period_nav" %>
+    <%= render "summary_stats" %>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <%= render "category_chart" %>
+      <%= render "trends_chart" %>
+    </div>
+
+    <%= render "transactions_drilldown" %>
+    <%= render "budget_progress" %>
+    <%= render "tag_spending" %>
+
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Accounts</h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       <% @accounts.each do |account| %>
         <%= link_to account_path(account), class: "block bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow" do %>
           <p class="text-xs font-medium text-gray-400 uppercase tracking-wide"><%= account.institution %></p>

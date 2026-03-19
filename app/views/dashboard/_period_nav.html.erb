@@ -1,0 +1,22 @@
+<div class="flex justify-between items-center mb-6">
+  <% prev_date = @date - 1.month %>
+  <%= link_to dashboard_path(month: prev_date.month, year: prev_date.year),
+      class: "inline-flex items-center px-3 py-2 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50 text-sm" do %>
+    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    Prev
+  <% end %>
+
+  <div class="text-center">
+    <h2 class="text-xl font-bold text-gray-900"><%= @date.strftime("%B %Y") %></h2>
+    <% unless @date.month == Date.current.month && @date.year == Date.current.year %>
+      <%= link_to "Today", dashboard_path, class: "text-xs text-indigo-600 hover:text-indigo-900" %>
+    <% end %>
+  </div>
+
+  <% next_date = @date + 1.month %>
+  <%= link_to dashboard_path(month: next_date.month, year: next_date.year),
+      class: "inline-flex items-center px-3 py-2 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50 text-sm" do %>
+    Next
+    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+  <% end %>
+</div>

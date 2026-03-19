@@ -1,0 +1,37 @@
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+  <div class="bg-white shadow rounded-lg p-4">
+    <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Income</p>
+    <p class="text-2xl font-bold text-green-600 mt-1"><%= format_cents(@total_income) %></p>
+  </div>
+
+  <div class="bg-white shadow rounded-lg p-4">
+    <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Expenses</p>
+    <p class="text-2xl font-bold text-red-600 mt-1"><%= format_cents(@total_expenses) %></p>
+  </div>
+
+  <div class="bg-white shadow rounded-lg p-4">
+    <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Net Change</p>
+    <p class="text-2xl font-bold <%= @net_change >= 0 ? 'text-green-600' : 'text-red-600' %> mt-1">
+      <%= format_cents(@net_change) %>
+    </p>
+    <% if @total_income > 0 %>
+      <% savings_rate = ((@net_change.to_f / @total_income) * 100).round(1) %>
+      <p class="text-xs text-gray-500 mt-1">
+        Savings rate: <span class="font-medium <%= savings_rate >= 0 ? 'text-green-600' : 'text-red-600' %>"><%= savings_rate %>%</span>
+      </p>
+    <% end %>
+  </div>
+
+  <div class="bg-white shadow rounded-lg p-4">
+    <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Uncategorized</p>
+    <% if @uncategorized_count > 0 %>
+      <%= link_to uncategorized_transactions_path, class: "block" do %>
+        <p class="text-2xl font-bold text-yellow-600 mt-1"><%= @uncategorized_count %></p>
+        <p class="text-xs text-indigo-600 hover:text-indigo-900 mt-1">Review &rarr;</p>
+      <% end %>
+    <% else %>
+      <p class="text-2xl font-bold text-green-600 mt-1">0</p>
+      <p class="text-xs text-gray-500 mt-1">All categorized</p>
+    <% end %>
+  </div>
+</div>

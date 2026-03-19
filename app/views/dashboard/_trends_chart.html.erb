@@ -1,0 +1,56 @@
+<div class="bg-white shadow rounded-lg p-6">
+  <h3 class="text-lg font-semibold text-gray-900 mb-4">Monthly Trends</h3>
+
+  <% if @monthly_income.any? || @monthly_expenses.any? %>
+    <%
+      # Build unified month labels from both income and expense data
+      all_months = (@monthly_income.keys + @monthly_expenses.keys).uniq.sort
+      labels = all_months.map { |d| d.strftime("%b %Y") }
+
+      config = {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: "Income",
+              data: all_months.map { |d| @monthly_income[d] || 0 },
+              backgroundColor: "#16a34a",
+              borderRadius: 4
+            },
+            {
+              label: "Expenses",
+              data: all_months.map { |d| @monthly_expenses[d] || 0 },
+              backgroundColor: "#dc2626",
+              borderRadius: 4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { callback: "currency" }
+            }
+          },
+          plugins: {
+            legend: { position: "bottom", labels: { padding: 16, usePointStyle: true } }
+          }
+        }
+      }
+    %>
+
+    <div data-controller="chart"
+         data-chart-config-value="<%= config.to_json %>"
+         class="relative" style="height: 300px;">
+      <canvas></canvas>
+    </div>
+  <% else %>
+    <div class="text-center py-12">
+      <p class="text-gray-500">No transaction data yet.</p>
+      <p class="text-sm text-gray-400 mt-1">Trends will appear after you import statements.</p>
+    </div>
+  <% end %>
+</div>
