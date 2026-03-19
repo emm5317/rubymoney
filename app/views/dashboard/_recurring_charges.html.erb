@@ -1,0 +1,62 @@
+<div class="bg-white shadow rounded-lg overflow-hidden mb-8">
+  <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+    <div>
+      <h3 class="text-lg font-semibold text-gray-900">Recurring Charges</h3>
+      <p class="text-sm text-gray-500 mt-0.5">
+        Monthly total: <span class="font-semibold text-red-600"><%= number_to_currency(@total_monthly_recurring.abs / 100.0) %></span>
+        <% if @missed_recurring_count > 0 %>
+          <span class="ml-2 px-1.5 py-0.5 text-xs rounded-full bg-red-100 text-red-800"><%= @missed_recurring_count %> missed</span>
+        <% end %>
+      </p>
+    </div>
+    <%= link_to "View all", recurring_transactions_path, class: "text-sm text-indigo-600 hover:text-indigo-900" %>
+  </div>
+
+  <% if @recurring_charges.any? %>
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Freq</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Next</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        <% @recurring_charges.each_with_index do |recurring, index| %>
+          <tr class="<%= index.even? ? 'bg-white' : 'bg-gray-50' %> hover:bg-gray-100 transition-colors">
+            <td class="px-6 py-4 whitespace-nowrap text-sm">
+              <div class="flex items-center">
+                <span class="w-2 h-2 rounded-full mr-2 <%= recurring.missed? ? 'bg-red-500' : 'bg-green-500' %>"></span>
+                <%= link_to recurring.title, recurring_transaction_path(recurring), class: "text-indigo-600 hover:text-indigo-900" %>
+                <% if recurring.amount_changed_significantly? %>
+                  <span class="ml-1 px-1 py-0.5 text-xs rounded bg-yellow-100 text-yellow-800">changed</span>
+                <% end %>
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-red-600">
+              <%= number_to_currency(recurring.last_amount_cents&.abs.to_i / 100.0) %>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm">
+              <%= recurring_frequency_badge(recurring.frequency) %>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm">
+              <% if recurring.overdue? %>
+                <span class="text-red-600 font-medium">Overdue</span>
+              <% elsif recurring.next_expected_date %>
+                <span class="text-gray-900"><%= recurring.next_expected_date.strftime("%b %d") %></span>
+              <% end %>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm"><%= category_label(recurring.category) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <div class="p-6 text-center">
+      <p class="text-gray-500 text-sm">No recurring patterns detected yet.</p>
+      <p class="text-gray-400 text-xs mt-1">Import at least 3 months of statements for best results.</p>
+    </div>
+  <% end %>
+</div>

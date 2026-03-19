@@ -1,0 +1,168 @@
+<div class="max-w-7xl mx-auto px-4 py-8">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Recurring Transactions</h1>
+    <div class="flex space-x-3">
+      <%= button_to "Detect Now", detect_now_recurring_transactions_path, method: :post, class: "inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50" %>
+    </div>
+  </div>
+
+  <%# Summary cards %>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+    <div class="bg-white shadow rounded-lg p-6 text-center">
+      <p class="text-sm font-medium text-gray-500">Monthly Recurring</p>
+      <p class="mt-1 text-2xl font-bold text-red-600"><%= number_to_currency(@total_monthly.abs / 100.0) %></p>
+    </div>
+    <div class="bg-white shadow rounded-lg p-6 text-center">
+      <p class="text-sm font-medium text-gray-500">Active</p>
+      <p class="mt-1 text-2xl font-bold text-gray-900"><%= @active.size %></p>
+    </div>
+    <div class="bg-white shadow rounded-lg p-6 text-center">
+      <p class="text-sm font-medium text-gray-500">Missed</p>
+      <p class="mt-1 text-2xl font-bold <%= @missed.any? ? 'text-red-600' : 'text-gray-900' %>"><%= @missed.size %></p>
+    </div>
+  </div>
+
+  <% if @active.any? || @missed.any? %>
+    <%# Active recurring %>
+    <% if @missed.any? %>
+      <div class="bg-white shadow rounded-lg overflow-hidden mb-8">
+        <div class="px-6 py-4 border-b border-gray-200 bg-red-50">
+          <h3 class="text-lg font-semibold text-red-900">Missed</h3>
+          <p class="text-sm text-red-700 mt-1">These charges were expected but haven't appeared yet.</p>
+        </div>
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Frequency</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expected</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <% @missed.each_with_index do |recurring, index| %>
+              <%= render "recurring_row", recurring: recurring, index: index %>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+
+    <div class="bg-white shadow rounded-lg overflow-hidden mb-8">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">Active</h3>
+      </div>
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Frequency</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Next Expected</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <% @active.each_with_index do |recurring, index| %>
+            <%= render "recurring_row", recurring: recurring, index: index %>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="bg-white shadow rounded-lg p-8 text-center mb-8">
+      <p class="text-gray-500">No recurring patterns detected yet.</p>
+      <p class="text-sm text-gray-400 mt-1">Import at least 3 months of statements, then click "Detect Now".</p>
+    </div>
+  <% end %>
+
+  <% if @paused_or_cancelled.any? %>
+    <div class="bg-white shadow rounded-lg overflow-hidden mb-8">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">Paused / Cancelled</h3>
+      </div>
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Frequency</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Seen</th>
+            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <% @paused_or_cancelled.each_with_index do |recurring, index| %>
+            <tr class="<%= index.even? ? 'bg-white' : 'bg-gray-50' %> hover:bg-gray-100 transition-colors">
+              <td class="px-6 py-4 whitespace-nowrap text-sm">
+                <%= link_to recurring.title, recurring_transaction_path(recurring), class: "text-indigo-600 hover:text-indigo-900" %>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-semibold"><%= number_to_currency(recurring.average_amount_cents.abs / 100.0) %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm"><%= recurring_frequency_badge(recurring.frequency) %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= recurring.last_seen_date&.strftime("%b %d, %Y") || "Unknown" %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                <%= button_to "Reactivate", reactivate_recurring_transaction_path(recurring), method: :post, class: "text-indigo-600 hover:text-indigo-900" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+
+  <%# Mark as recurring section %>
+  <% if @candidate_groups.any? %>
+    <div class="bg-white shadow rounded-lg overflow-hidden mb-8">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">Suggestions</h3>
+        <p class="text-sm text-gray-500 mt-1">Transaction groups that appear frequently. Click "Track" to mark as recurring.</p>
+      </div>
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Occurrences</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Amount</th>
+            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <% @candidate_groups.each_with_index do |group, index| %>
+            <tr class="<%= index.even? ? 'bg-white' : 'bg-gray-50' %> hover:bg-gray-100 transition-colors">
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><%= group[:description_pattern].titleize.truncate(40) %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= group[:count] %> times</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-semibold"><%= number_to_currency(group[:average_amount_cents].abs / 100.0) %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                <%= button_to "Track", mark_recurring_recurring_transactions_path(account_id: group[:account_id], description_pattern: group[:description_pattern]), method: :post, class: "text-indigo-600 hover:text-indigo-900 font-medium" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+
+  <% if @dismissed.any? %>
+    <details class="mb-8">
+      <summary class="text-sm text-gray-500 cursor-pointer hover:text-gray-700">Show <%= @dismissed.size %> dismissed</summary>
+      <div class="mt-2 bg-white shadow rounded-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+          <tbody class="bg-white divide-y divide-gray-200">
+            <% @dismissed.each_with_index do |recurring, index| %>
+              <tr class="<%= index.even? ? 'bg-white' : 'bg-gray-50' %>">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= recurring.title %></td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= number_to_currency(recurring.average_amount_cents.abs / 100.0) %></td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                  <%= button_to "Restore", reactivate_recurring_transaction_path(recurring), method: :post, class: "text-indigo-600 hover:text-indigo-900" %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </details>
+  <% end %>
+</div>

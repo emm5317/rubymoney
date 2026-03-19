@@ -19,6 +19,10 @@ class TransactionsController < ApplicationController
     unless @transaction.is_transfer?
       @transfer_candidates = TransferMatcher.new.find_candidates(@transaction, user: current_user)
     end
+    @recurring_match = RecurringTransaction.find_by(
+      account_id: @transaction.account_id,
+      description_pattern: @transaction.normalized_desc
+    )&.then { |r| r.user_dismissed? ? nil : r }
   end
 
   def new

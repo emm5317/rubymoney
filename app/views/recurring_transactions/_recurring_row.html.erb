@@ -1,0 +1,38 @@
+<tr class="<%= index.even? ? 'bg-white' : 'bg-gray-50' %> hover:bg-gray-100 transition-colors">
+  <td class="px-6 py-4 whitespace-nowrap text-sm">
+    <div class="flex items-center">
+      <span class="w-2 h-2 rounded-full mr-2 <%= recurring.missed? ? 'bg-red-500' : 'bg-green-500' %>"></span>
+      <%= link_to recurring.title, recurring_transaction_path(recurring), class: "text-indigo-600 hover:text-indigo-900 font-medium" %>
+      <% unless recurring.user_confirmed? %>
+        <span class="ml-2 px-1.5 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">auto</span>
+      <% end %>
+      <% if recurring.amount_changed_significantly? %>
+        <span class="ml-2 px-1.5 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-800" title="Amount changed from average">changed</span>
+      <% end %>
+    </div>
+  </td>
+  <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-red-600">
+    <%= number_to_currency(recurring.last_amount_cents&.abs.to_i / 100.0) %>
+  </td>
+  <td class="px-6 py-4 whitespace-nowrap text-sm">
+    <%= recurring_frequency_badge(recurring.frequency) %>
+  </td>
+  <td class="px-6 py-4 whitespace-nowrap text-sm">
+    <% if recurring.overdue? %>
+      <span class="text-red-600 font-medium">Overdue (<%= recurring.next_expected_date&.strftime("%b %d") %>)</span>
+    <% elsif recurring.next_expected_date %>
+      <span class="text-gray-900"><%= recurring.next_expected_date.strftime("%b %d, %Y") %></span>
+    <% else %>
+      <span class="text-gray-400">Unknown</span>
+    <% end %>
+  </td>
+  <td class="px-6 py-4 whitespace-nowrap text-sm">
+    <%= category_label(recurring.category) %>
+  </td>
+  <td class="px-6 py-4 whitespace-nowrap text-right text-sm space-x-2">
+    <% unless recurring.user_confirmed? %>
+      <%= button_to "Confirm", confirm_recurring_transaction_path(recurring), method: :post, class: "text-green-600 hover:text-green-900 font-medium" %>
+    <% end %>
+    <%= button_to "Dismiss", dismiss_recurring_transaction_path(recurring), method: :post, class: "text-gray-500 hover:text-gray-700" %>
+  </td>
+</tr>

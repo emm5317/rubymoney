@@ -1,0 +1,120 @@
+<div class="max-w-7xl mx-auto px-4 py-8">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-900"><%= @recurring_transaction.title %></h1>
+    <div class="flex space-x-3">
+      <%= link_to "Edit", edit_recurring_transaction_path(@recurring_transaction), class: "inline-flex items-center px-4 py-2 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700" %>
+      <%= button_to "Delete", recurring_transaction_path(@recurring_transaction), method: :delete, data: { turbo_confirm: "Are you sure?" }, class: "inline-flex items-center px-4 py-2 bg-red-600 text-white font-medium rounded-md hover:bg-red-700" %>
+    </div>
+  </div>
+
+  <div class="bg-white shadow rounded-lg p-6 mb-6">
+    <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+      <div>
+        <dt class="text-sm font-medium text-gray-500">Status</dt>
+        <dd class="mt-1"><%= recurring_status_badge(@recurring_transaction.status) %></dd>
+      </div>
+      <div>
+        <dt class="text-sm font-medium text-gray-500">Frequency</dt>
+        <dd class="mt-1"><%= recurring_frequency_badge(@recurring_transaction.frequency) %></dd>
+      </div>
+      <div>
+        <dt class="text-sm font-medium text-gray-500">Average Amount</dt>
+        <dd class="mt-1 text-sm font-semibold text-red-600"><%= number_to_currency(@recurring_transaction.average_amount_cents.abs / 100.0) %></dd>
+      </div>
+      <div>
+        <dt class="text-sm font-medium text-gray-500">Last Charge</dt>
+        <dd class="mt-1 text-sm font-semibold text-red-600">
+          <%= number_to_currency(@recurring_transaction.last_amount_cents&.abs.to_i / 100.0) %>
+          <% if @recurring_transaction.amount_changed_significantly? %>
+            <span class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-800">changed</span>
+          <% end %>
+        </dd>
+      </div>
+      <div>
+        <dt class="text-sm font-medium text-gray-500">Monthly Cost</dt>
+        <dd class="mt-1 text-sm font-semibold text-gray-900"><%= number_to_currency(@recurring_transaction.monthly_cost_cents.abs / 100.0) %>/mo</dd>
+      </div>
+      <div>
+        <dt class="text-sm font-medium text-gray-500">Annual Cost</dt>
+        <dd class="mt-1 text-sm font-semibold text-gray-900"><%= number_to_currency(@recurring_transaction.monthly_cost_cents.abs * 12 / 100.0) %>/yr</dd>
+      </div>
+      <div>
+        <dt class="text-sm font-medium text-gray-500">Next Expected</dt>
+        <dd class="mt-1 text-sm">
+          <% if @recurring_transaction.overdue? %>
+            <span class="text-red-600 font-medium">Overdue (was expected <%= @recurring_transaction.next_expected_date&.strftime("%B %d, %Y") %>)</span>
+          <% elsif @recurring_transaction.next_expected_date %>
+            <span class="text-gray-900"><%= @recurring_transaction.next_expected_date.strftime("%B %d, %Y") %></span>
+          <% else %>
+            <span class="text-gray-400">Unknown</span>
+          <% end %>
+        </dd>
+      </div>
+      <div>
+        <dt class="text-sm font-medium text-gray-500">Last Seen</dt>
+        <dd class="mt-1 text-sm text-gray-900"><%= @recurring_transaction.last_seen_date&.strftime("%B %d, %Y") || "Unknown" %></dd>
+      </div>
+      <div>
+        <dt class="text-sm font-medium text-gray-500">Category</dt>
+        <dd class="mt-1 text-sm"><%= category_label(@recurring_transaction.category) %></dd>
+      </div>
+      <div>
+        <dt class="text-sm font-medium text-gray-500">Account</dt>
+        <dd class="mt-1 text-sm text-gray-900"><%= @recurring_transaction.account.name %></dd>
+      </div>
+      <div>
+        <dt class="text-sm font-medium text-gray-500">Occurrences</dt>
+        <dd class="mt-1 text-sm text-gray-900"><%= @recurring_transaction.occurrence_count %> times</dd>
+      </div>
+      <div>
+        <dt class="text-sm font-medium text-gray-500">Confidence</dt>
+        <dd class="mt-1 text-sm text-gray-900">
+          <% conf = (@recurring_transaction.confidence * 100).round %>
+          <span class="<%= conf >= 80 ? 'text-green-600' : conf >= 50 ? 'text-yellow-600' : 'text-red-600' %>"><%= conf %>%</span>
+          <% if @recurring_transaction.user_confirmed? %>
+            <span class="ml-1 text-xs text-gray-400">(user confirmed)</span>
+          <% end %>
+        </dd>
+      </div>
+    </dl>
+  </div>
+
+  <%# Matched transaction history %>
+  <div class="bg-white shadow rounded-lg overflow-hidden mb-6">
+    <div class="px-6 py-4 border-b border-gray-200">
+      <h3 class="text-lg font-semibold text-gray-900">Transaction History</h3>
+    </div>
+    <% if @matched_transactions.any? %>
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <% @matched_transactions.each_with_index do |txn, index| %>
+            <tr class="<%= index.even? ? 'bg-white' : 'bg-gray-50' %> hover:bg-gray-100 transition-colors">
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"><%= txn.date.strftime("%b %d, %Y") %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm">
+                <%= link_to txn.description, transaction_path(txn), class: "text-indigo-600 hover:text-indigo-900" %>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold <%= txn.debit? ? 'text-red-600' : 'text-green-600' %>">
+                <%= number_to_currency(txn.amount) %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <div class="p-8 text-center">
+        <p class="text-gray-500">No matching transactions found.</p>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="flex items-center space-x-4">
+    <%= link_to "Back to Recurring", recurring_transactions_path, class: "text-indigo-600 hover:text-indigo-900 text-sm" %>
+  </div>
+</div>

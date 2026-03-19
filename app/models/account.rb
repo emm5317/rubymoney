@@ -5,6 +5,7 @@ class Account < ApplicationRecord
   has_many :imports, dependent: :destroy
   has_many :import_profiles, dependent: :destroy
   has_many :account_balances, dependent: :destroy
+  has_many :recurring_transactions, dependent: :destroy
 
   enum :account_type, { checking: 0, savings: 1, credit_card: 2, investment: 3 }
   enum :source_type, { manual: 0, csv: 1, ofx: 2, pdf: 3, plaid: 4 }

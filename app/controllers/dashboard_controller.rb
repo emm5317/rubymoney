@@ -59,6 +59,15 @@ class DashboardController < ApplicationController
       .limit(10)
       .sum(:amount_cents)
 
+    # Recurring charges (active or missed, top 8 by amount)
+    @recurring_charges = RecurringTransaction.joins(:account)
+      .where(accounts: { user_id: current_user.id })
+      .not_dismissed.active_or_missed
+      .includes(:account, :category)
+      .by_amount.limit(8)
+    @total_monthly_recurring = @recurring_charges.sum(&:monthly_cost_cents)
+    @missed_recurring_count = @recurring_charges.count(&:overdue?)
+
     # Recent transactions (latest 5 across all accounts)
     @recent_transactions = user_transactions
       .includes(:account, :category)

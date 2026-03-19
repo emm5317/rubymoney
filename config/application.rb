@@ -49,6 +49,11 @@ module Rubymoney
         cron: "0 2 * * *", # Daily at 2 AM
         class: "BalanceSnapshotJob",
         description: "Record daily account balance snapshots for net worth tracking"
+      },
+      recurring_detection: {
+        cron: "0 3 * * *", # Daily at 3 AM (after balance snapshots)
+        class: "RecurringDetectionJob",
+        description: "Detect recurring transaction patterns across all accounts"
       }
     }
   end

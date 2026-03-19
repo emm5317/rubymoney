@@ -54,6 +54,29 @@ module ApplicationHelper
     content_tag(:span, arrow, class: "ml-1 text-indigo-600 font-bold")
   end
 
+  def recurring_frequency_badge(frequency)
+    css = case frequency.to_s
+          when "weekly"    then "bg-blue-100 text-blue-800"
+          when "biweekly"  then "bg-cyan-100 text-cyan-800"
+          when "monthly"   then "bg-indigo-100 text-indigo-800"
+          when "quarterly" then "bg-purple-100 text-purple-800"
+          when "annual"    then "bg-pink-100 text-pink-800"
+          else "bg-gray-100 text-gray-800"
+          end
+    content_tag(:span, frequency.to_s.titleize, class: "px-2 py-1 text-xs rounded-full #{css}")
+  end
+
+  def recurring_status_badge(status)
+    css = case status.to_s
+          when "active"    then "bg-green-100 text-green-800"
+          when "missed"    then "bg-red-100 text-red-800"
+          when "paused"    then "bg-yellow-100 text-yellow-800"
+          when "cancelled" then "bg-gray-100 text-gray-800"
+          else "bg-gray-100 text-gray-800"
+          end
+    content_tag(:span, status.to_s.titleize, class: "px-2 py-1 text-xs rounded-full #{css}")
+  end
+
   def transaction_status_badge(status)
     css = case status.to_s
           when "cleared"     then "bg-green-100 text-green-800"

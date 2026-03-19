@@ -53,6 +53,18 @@ Rails.application.routes.draw do
   end
   resources :tags
 
+  resources :recurring_transactions, only: [:index, :show, :edit, :update, :destroy] do
+    member do
+      post :confirm
+      post :dismiss
+      post :reactivate
+    end
+    collection do
+      post :detect_now
+      post :mark_recurring
+    end
+  end
+
   # Top-level import shortcut
   get "import", to: "import_start#index", as: :import_start
 
