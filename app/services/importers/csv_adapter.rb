@@ -14,10 +14,10 @@ module Importers
     }.freeze
 
     def parse
-      rows = CSV.parse(file_content, headers: true, liberal_parsing: true, skip_blanks: true)
-      return [] if rows.empty?
+      headers, rows = extract_headers_and_rows
+      return [] if headers.blank? || rows.empty?
 
-      mapping = resolve_column_mapping(rows.headers)
+      mapping = resolve_column_mapping(headers)
       return [] if mapping[:date].nil? || mapping[:description].nil?
 
       rows.filter_map { |row| parse_row(row, mapping) }
@@ -25,13 +25,35 @@ module Importers
 
     private
 
+    def extract_headers_and_rows
+      raw_rows = CSV.parse(file_content, headers: false, liberal_parsing: true, skip_blanks: true)
+      return [nil, []] if raw_rows.empty?
+
+      header_index = raw_rows.find_index { |row| header_row?(row) } || 0
+      headers = raw_rows[header_index]
+      return [headers, []] if headers.blank?
+
+      rows = raw_rows.drop(header_index + 1).map do |row|
+        CSV::Row.new(headers, row)
+      end
+
+      [headers, rows]
+    end
+
+    def header_row?(row)
+      headers = row.map { |value| normalize_header(value) }
+      return false unless headers.include?("date") && headers.include?("description")
+
+      headers.any? { |header| %w[amount total debit withdrawal credit deposit].include?(header) }
+    end
+
     def resolve_column_mapping(headers)
       # Use saved profile mapping if available
       if import_profile&.column_mapping.present?
         return import_profile.column_mapping.symbolize_keys
       end
 
-      normalized_headers = headers.map { |h| h&.strip&.downcase&.gsub(/[\s\-]/, "_") }
+      normalized_headers = headers.map { |h| normalize_header(h) }
       mapping = {}
 
       HEADER_ALIASES.each do |field, aliases|
@@ -50,6 +72,10 @@ module Importers
       end
 
       mapping
+    end
+
+    def normalize_header(value)
+      value&.strip&.downcase&.gsub(/[\s\-]/, "_")&.gsub(/[^\w]/, "")
     end
 
     def parse_row(row, mapping)

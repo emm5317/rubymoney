@@ -68,6 +68,41 @@ RSpec.describe Importers::CsvAdapter do
       expect(result.first[:amount_cents]).to eq(-5000)
     end
 
+    it "skips statement summary rows before the real header row" do
+      csv = <<~CSV
+        Description,,Summary Amt.,
+        Beginning balance as of 01/01/2026,,"7,830.85",
+        Total credits,,"117,176.16",
+        Total debits,,"-111,901.77",
+        Ending balance as of 02/09/2026,,"13,105.24",
+        ,,,
+        Date,Description,Amount,Running Bal.
+        1/2/2026,"Transfer THRIZER ; 12/16/2025""""",127.65,"7,958.50"
+        1/2/2026,HOBBY-LOBBY #0204 12/31 PURCHASE DOWNERS GROVE IL,-10.44,"7,948.06"
+      CSV
+
+      adapter = described_class.new(csv, account: account)
+      result = adapter.parse
+
+      expect(result.size).to eq(2)
+      expect(result.first[:date]).to eq(Date.new(2026, 1, 2))
+      expect(result.first[:description]).to eq('Transfer THRIZER ; 12/16/2025"')
+      expect(result.first[:amount_cents]).to eq(12_765)
+      expect(result.second[:amount_cents]).to eq(-1044)
+    end
+
+    it "parses slash-formatted dates as month/day/year" do
+      csv = <<~CSV
+        Date,Description,Amount
+        1/2/2026,STARBUCKS,-4.50
+      CSV
+
+      adapter = described_class.new(csv, account: account)
+      result = adapter.parse
+
+      expect(result.first[:date]).to eq(Date.new(2026, 1, 2))
+    end
+
     it "skips rows with missing date or description" do
       csv = <<~CSV
         Date,Description,Amount

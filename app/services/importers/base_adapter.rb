@@ -21,11 +21,14 @@ module Importers
     end
 
     def parse_date(date_string, format: nil)
+      value = date_string.strip
       format ||= import_profile&.date_format
       if format.present?
-        Date.strptime(date_string.strip, format)
+        Date.strptime(value, format)
+      elsif value.match?(/\A\d{1,2}\/\d{1,2}\/\d{4}\z/)
+        Date.strptime(value, "%m/%d/%Y")
       else
-        Date.parse(date_string.strip)
+        Date.parse(value)
       end
     rescue Date::Error
       nil
