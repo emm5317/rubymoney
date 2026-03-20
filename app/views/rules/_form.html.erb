@@ -68,7 +68,7 @@
 
 <div class="bg-white shadow rounded-lg p-6 mt-6">
   <h3 class="text-lg font-semibold text-gray-900 mb-4">Test Rule</h3>
-  <p class="text-sm text-gray-500 mb-4">Preview which existing transactions would match this rule.</p>
+  <p class="text-sm text-gray-500 mb-4">Preview which existing transactions would match this rule. Amount rules support Greater Than, Less Than, and Between only.</p>
   <%= form_with(url: preview_rules_path, method: :post, data: { turbo_frame: "rule-preview" }, class: "space-y-4") do |pf| %>
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <div>

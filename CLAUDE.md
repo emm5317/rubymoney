@@ -81,7 +81,7 @@ docker compose -f docker-compose.yml -f docker-compose.test.yml build test
 - Auto-categorization runs automatically after import confirm.
 
 ### Recurring Detection
-- `RecurringDetector` service groups transactions by `normalized_desc`, analyzes interval regularity, classifies frequency (weekly/biweekly/monthly/quarterly/annual), scores confidence.
+- `RecurringDetector` service groups transactions by `normalized_desc`, analyzes interval regularity, classifies frequency (weekly/biweekly/monthly/quarterly for auto-detection; annual can still be tracked manually), and scores confidence.
 - `RecurringTransaction` model stores detected patterns with status tracking (active/paused/cancelled/missed).
 - Users can confirm auto-detected patterns, dismiss false positives, or manually mark transaction groups as recurring.
 - `RecurringDetectionJob` runs daily at 3 AM via good_job cron.

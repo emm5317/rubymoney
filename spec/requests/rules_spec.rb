@@ -145,6 +145,52 @@ RSpec.describe "Rules", type: :request do
     end
   end
 
+  describe "POST /rules/preview" do
+    let(:account) { create(:account, user: user) }
+
+    it "returns matches for a valid text preview" do
+      create(:transaction, account: account, description: "STARBUCKS STORE 123", normalized_desc: "STARBUCKS STORE", amount_cents: -599)
+
+      post preview_rules_path, params: {
+        rule: {
+          match_field: "description",
+          match_type: "contains",
+          match_value: "STARBUCKS"
+        }
+      }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("matching transaction")
+      expect(response.body).to include("STARBUCKS STORE 123")
+    end
+
+    it "rejects text operators on amount previews" do
+      post preview_rules_path, params: {
+        rule: {
+          match_field: "amount_field",
+          match_type: "contains",
+          match_value: "500"
+        }
+      }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.body).to include("Amount rules only support Greater Than, Less Than, or Between.")
+    end
+
+    it "rejects malformed regex previews" do
+      post preview_rules_path, params: {
+        rule: {
+          match_field: "description",
+          match_type: "regex",
+          match_value: "[unterminated"
+        }
+      }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.body).to include("is not a valid regex")
+    end
+  end
+
   describe "authentication" do
     before { sign_out user }
 

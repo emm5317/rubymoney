@@ -3,8 +3,7 @@ class RecurringDetector
     weekly:    { min: 5, max: 9, target: 7 },
     biweekly:  { min: 12, max: 16, target: 14 },
     monthly:   { min: 25, max: 35, target: 30 },
-    quarterly: { min: 80, max: 100, target: 91 },
-    annual:    { min: 350, max: 380, target: 365 }
+    quarterly: { min: 80, max: 100, target: 91 }
   }.freeze
 
   MIN_OCCURRENCES = 3
@@ -46,8 +45,7 @@ class RecurringDetector
       was_new = recurring.new_record?
 
       recurring.assign_attributes(analysis)
-      # Preserve user confirmations
-      recurring.status = :active if recurring.new_record? || !recurring.user_confirmed?
+      recurring.status = :active if should_activate?(recurring, analysis)
 
       if recurring.save
         results[was_new ? :created : :updated] += 1
@@ -55,6 +53,13 @@ class RecurringDetector
     end
 
     results
+  end
+
+  def should_activate?(recurring, analysis)
+    return true if recurring.new_record?
+    return true unless recurring.user_confirmed?
+
+    recurring.missed? && analysis[:last_seen_date].present? && analysis[:last_seen_date] >= Date.current - recurring.average_interval_days.to_i.days
   end
 
   private

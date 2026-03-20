@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_03_17_143344) do
+ActiveRecord::Schema[7.2].define(version: 2026_03_19_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -190,6 +190,32 @@ ActiveRecord::Schema[7.2].define(version: 2026_03_17_143344) do
     t.index ["account_id"], name: "index_imports_on_account_id"
   end
 
+  create_table "recurring_transactions", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "category_id"
+    t.string "title", null: false
+    t.string "description_pattern", null: false
+    t.bigint "average_amount_cents", null: false
+    t.bigint "last_amount_cents"
+    t.integer "frequency", default: 0, null: false
+    t.float "confidence", default: 0.0
+    t.integer "occurrence_count", default: 0
+    t.date "last_seen_date"
+    t.date "next_expected_date"
+    t.integer "status", default: 0, null: false
+    t.boolean "user_confirmed", default: false
+    t.boolean "user_dismissed", default: false
+    t.float "amount_variance", default: 0.0
+    t.integer "average_interval_days"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "description_pattern"], name: "idx_recurring_on_account_desc_pattern", unique: true
+    t.index ["account_id"], name: "index_recurring_transactions_on_account_id"
+    t.index ["category_id"], name: "index_recurring_transactions_on_category_id"
+    t.index ["next_expected_date"], name: "index_recurring_transactions_on_next_expected_date"
+    t.index ["status"], name: "index_recurring_transactions_on_status"
+  end
+
   create_table "rules", force: :cascade do |t|
     t.bigint "category_id", null: false
     t.integer "match_field", default: 0, null: false
@@ -277,6 +303,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_03_17_143344) do
   add_foreign_key "budgets", "categories"
   add_foreign_key "import_profiles", "accounts"
   add_foreign_key "imports", "accounts"
+  add_foreign_key "recurring_transactions", "accounts"
+  add_foreign_key "recurring_transactions", "categories"
   add_foreign_key "rules", "categories"
   add_foreign_key "transaction_tags", "tags"
   add_foreign_key "transaction_tags", "transactions"

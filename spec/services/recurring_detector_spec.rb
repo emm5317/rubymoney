@@ -157,6 +157,43 @@ RSpec.describe RecurringDetector do
       recurring = RecurringTransaction.last
       expect(recurring.next_expected_date).to be > recurring.last_seen_date
     end
+
+    it "reactivates a missed recurring transaction when fresh matches resume" do
+      create_monthly_transactions("NETFLIX.COM", count: 4, start_date: 6.months.ago.to_date)
+      described_class.new(user).detect_all
+
+      recurring = RecurringTransaction.last
+      recurring.update!(next_expected_date: 60.days.ago.to_date, status: :missed, user_confirmed: true)
+
+      create(:transaction,
+        account: account,
+        description: "NETFLIX.COM",
+        normalized_desc: "NETFLIX.COM",
+        date: Date.current,
+        amount_cents: -1499,
+        is_transfer: false
+      )
+
+      described_class.new(user).detect_all
+      expect(recurring.reload.status).to eq("active")
+    end
+
+    it "does not auto-detect annual patterns within the current lookback window" do
+      [Date.current - 730.days, Date.current - 365.days, Date.current].each do |date|
+        create(:transaction,
+          account: account,
+          description: "AMAZON PRIME",
+          normalized_desc: "AMAZON PRIME",
+          date: date,
+          amount_cents: -13900,
+          is_transfer: false
+        )
+      end
+
+      results = described_class.new(user).detect_all
+      expect(results[:created]).to eq(0)
+      expect(RecurringTransaction.where(description_pattern: "AMAZON PRIME")).to be_empty
+    end
   end
 
   describe "mark_missed_recurring" do

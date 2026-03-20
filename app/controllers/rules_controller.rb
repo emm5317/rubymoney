@@ -49,6 +49,14 @@ class RulesController < ApplicationController
 
   def preview
     rule = Rule.new(rule_params)
+    if rule.preview_error_message.present?
+      return render_preview([], rule.preview_error_message, :unprocessable_entity)
+    end
+
+    if rule.regex_error_message.present?
+      return render_preview([], rule.regex_error_message, :unprocessable_entity)
+    end
+
     scope = Transaction.joins(:account)
       .where(accounts: { user_id: current_user.id })
       .includes(:account)
@@ -78,11 +86,17 @@ class RulesController < ApplicationController
     end
 
     @matching ||= scope.limit(20).to_a
-
-    render inline: "<%= turbo_frame_tag 'rule-preview' do %><%= render partial: 'rules/preview_results', locals: { transactions: @matching } %><% end %>", layout: false
+    render_preview(@matching)
   end
 
   private
+
+  def render_preview(transactions, error_message = nil, status = :ok)
+    render inline: "<%= turbo_frame_tag 'rule-preview' do %><%= render partial: 'rules/preview_results', locals: { transactions: transactions, error_message: error_message } %><% end %>",
+           locals: { transactions: transactions, error_message: error_message },
+           layout: false,
+           status: status
+  end
 
   def set_rule
     @rule = Rule.find(params[:id])
