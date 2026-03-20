@@ -5,7 +5,7 @@
 
     <div>
       <label class="block text-xs font-medium text-gray-500 mb-1">Search</label>
-      <%= text_field_tag :search, params[:search], placeholder: "Search descriptions...", class: "rounded-md border-gray-300 shadow-sm text-sm py-1.5 focus:border-indigo-500 focus:ring-indigo-500" %>
+      <%= text_field_tag :q, params[:q].presence || params[:search], placeholder: "Search descriptions...", class: "rounded-md border-gray-300 shadow-sm text-sm py-1.5 focus:border-indigo-500 focus:ring-indigo-500" %>
     </div>
 
     <div>

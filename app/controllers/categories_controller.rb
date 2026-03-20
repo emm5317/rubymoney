@@ -38,6 +38,36 @@ class CategoriesController < ApplicationController
     redirect_to categories_path, notice: "Category deleted."
   end
 
+  def merge
+    source = Category.find(params[:source_id])
+    target = Category.find(params[:target_id])
+
+    if source.id == target.id
+      redirect_to categories_path, alert: "Cannot merge a category into itself."
+      return
+    end
+
+    ActiveRecord::Base.transaction do
+      source.transactions.update_all(category_id: target.id)
+      source.rules.update_all(category_id: target.id)
+
+      source.budgets.find_each do |source_budget|
+        existing = target.budgets.find_by(month: source_budget.month, year: source_budget.year)
+        if existing
+          existing.update!(amount_cents: existing.amount_cents + source_budget.amount_cents)
+          source_budget.destroy!
+        else
+          source_budget.update!(category_id: target.id)
+        end
+      end
+
+      source.children.update_all(parent_id: target.id)
+      source.destroy!
+    end
+
+    redirect_to categories_path, notice: "\"#{source.name}\" merged into \"#{target.name}\"."
+  end
+
   private
 
   def set_category

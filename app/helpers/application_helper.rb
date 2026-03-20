@@ -22,7 +22,7 @@ module ApplicationHelper
   end
 
   def filter_active?
-    %i[account_id category_id type date_from date_to search].any? { |k| params[k].present? }
+    %i[account_id category_id type date_from date_to search q].any? { |k| params[k].present? }
   end
 
   def format_cents(cents)

@@ -1,4 +1,9 @@
 class Transaction < ApplicationRecord
+  include PgSearch::Model
+
+  pg_search_scope :search_by_description, against: [:description, :normalized_desc, :memo],
+    using: { tsearch: { prefix: true } }
+
   belongs_to :account
   belongs_to :import, optional: true
   belongs_to :category, optional: true

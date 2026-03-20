@@ -29,7 +29,15 @@
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                <%= link_to "Edit", edit_tag_path(tag), class: "text-indigo-600 hover:text-indigo-900" %>
+                <%= link_to "Edit", edit_tag_path(tag), class: "text-indigo-600 hover:text-indigo-900 mr-3" %>
+                <% other_tags = @tags.reject { |t| t.id == tag.id } %>
+                <% if other_tags.any? %>
+                  <%= form_with(url: merge_tags_path, method: :post, class: "inline-flex items-center gap-1", data: { turbo_confirm: "Merge \"#{tag.name}\" into the selected tag? This cannot be undone." }) do |f| %>
+                    <%= f.hidden_field :source_id, value: tag.id %>
+                    <%= f.select :target_id, other_tags.map { |t| [t.name, t.id] }, {}, class: "rounded-md border-gray-300 shadow-sm text-xs py-1 focus:border-indigo-500 focus:ring-indigo-500" %>
+                    <%= f.submit "Merge", class: "px-2 py-1 text-xs bg-red-600 text-white font-medium rounded-md hover:bg-red-700 cursor-pointer" %>
+                  <% end %>
+                <% end %>
               </td>
             </tr>
           <% end %>

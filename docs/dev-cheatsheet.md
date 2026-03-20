@@ -57,6 +57,16 @@ processor.parse    # Returns preview data
 processor.confirm  # Persists + auto-categorizes
 ```
 
+## Database Backup
+
+```bash
+# Manual backup (inside Docker)
+docker compose exec web bin/rails db:backup
+
+# Backups are stored in db/backups/ with 30-day auto-rotation
+# Automated daily backup runs at 3 AM via good_job cron (DatabaseBackupJob)
+```
+
 ## Useful URLs (Development)
 
 | URL | Description |

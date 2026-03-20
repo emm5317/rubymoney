@@ -1,0 +1,38 @@
+<div class="max-w-7xl mx-auto px-4 py-8">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Recurring Transactions</h1>
+  </div>
+
+  <% if @recurring.any? %>
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Amount</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Frequency</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Date</th>
+            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Occurrences</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <% @recurring.each_with_index do |item, index| %>
+            <tr class="<%= index.even? ? 'bg-white' : 'bg-gray-50' %> hover:bg-gray-100 transition-colors">
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><%= item[:description] %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-right <%= item[:transaction_type] == 'debit' ? 'text-red-600' : 'text-green-600' %>">
+                <%= number_to_currency(item[:avg_amount_cents] / 100.0) %>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= item[:frequency].titleize %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= item[:last_date].strftime("%b %d, %Y") %></td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500"><%= item[:count] %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="bg-white shadow rounded-lg p-8 text-center">
+      <p class="text-gray-500">No recurring transactions detected yet. Import more transactions to enable detection.</p>
+    </div>
+  <% end %>
+</div>

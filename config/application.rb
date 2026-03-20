@@ -54,6 +54,11 @@ module Rubymoney
         cron: "0 3 * * *", # Daily at 3 AM (after balance snapshots)
         class: "RecurringDetectionJob",
         description: "Detect recurring transaction patterns across all accounts"
+      },
+      database_backup: {
+        cron: "0 3 * * *", # Daily at 3 AM
+        class: "DatabaseBackupJob",
+        description: "Automated database backup with 30-day rotation"
       }
     }
   end

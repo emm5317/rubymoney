@@ -271,6 +271,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_03_19_200000) do
     t.boolean "auto_categorized", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "is_recurring", default: false, null: false
     t.index ["account_id", "date"], name: "index_transactions_on_account_id_and_date"
     t.index ["account_id", "source_fingerprint"], name: "idx_transactions_on_account_fingerprint", unique: true, where: "(source_fingerprint IS NOT NULL)"
     t.index ["account_id"], name: "index_transactions_on_account_id"

@@ -44,7 +44,13 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :categories
+  resources :recurring, only: [:index]
+
+  resources :categories do
+    collection do
+      post :merge
+    end
+  end
   resources :budgets do
     collection do
       post :copy_previous
@@ -55,7 +61,11 @@ Rails.application.routes.draw do
       post :preview
     end
   end
-  resources :tags
+  resources :tags do
+    collection do
+      post :merge
+    end
+  end
 
   resources :recurring_transactions, only: [:index, :show, :edit, :update, :destroy] do
     member do

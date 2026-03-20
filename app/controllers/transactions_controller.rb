@@ -215,7 +215,9 @@ class TransactionsController < ApplicationController
     scope = scope.where("transactions.date >= ?", params[:date_from]) if params[:date_from].present?
     scope = scope.where("transactions.date <= ?", params[:date_to]) if params[:date_to].present?
 
-    if params[:search].present?
+    if params[:q].present?
+      scope = scope.search_by_description(params[:q])
+    elsif params[:search].present?
       search_term = "%#{Transaction.sanitize_sql_like(params[:search])}%"
       scope = scope.where("transactions.description ILIKE :q OR transactions.normalized_desc ILIKE :q", q: search_term)
     end

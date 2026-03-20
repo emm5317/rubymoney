@@ -20,7 +20,9 @@ Personal finance app: import bank/credit card statements, categorize transaction
 
 **Phase 4.6 complete** — Recurring transaction detection (auto-detect subscriptions/bills, manual marking, dashboard integration, confirm/dismiss/reactivate, RecurringDetectionJob daily cron).
 
-**Not yet built:** PDF import (Phase 5), merchant normalization, pg_search, automated backup, category/tag merge (Phase 6).
+**Phase 6 in progress** — Full-text search (pg_search), CSV export, automated database backup, category merge, and tag merge are implemented in the current working tree alongside the richer recurring transaction flow.
+
+**Not yet built:** PDF import (Phase 5), merchant normalization, bulk import, duplicate review, mobile responsive polish, system tests.
 
 ## Development Environment
 
@@ -176,40 +178,40 @@ Account -< RecurringTransaction >- Category
 
 ```
 app/
-  controllers/    # 11 controllers (application, dashboard, accounts, transactions,
-                  #   categories, budgets, rules, tags, imports, import_start,
-                  #   recurring_transactions)
-  models/         # 13 models (user, account, transaction, category, budget,
-                  #   tag, transaction_tag, rule, import, import_profile,
-                  #   account_balance, recurring_transaction, application_record)
-  views/          # 12 view dirs (accounts, budgets, categories, dashboard,
-                  #   import_start, imports, layouts, pwa, recurring_transactions,
-                  #   rules, tags, transactions)
+  controllers/    # application, dashboard, accounts, transactions, categories,
+                  #   budgets, rules, tags, imports, import_start, recurring,
+                  #   recurring_transactions
+  models/         # core finance models plus recurring_transaction
+  views/          # server-rendered resources, dashboard, import_start, recurring,
+                  #   recurring_transactions, layouts, PWA
   services/       # ImportProcessor, Categorizer, RecurringDetector, TransferMatcher,
                   #   importers/ (BaseAdapter, CsvAdapter, OfxAdapter)
-  helpers/        # ApplicationHelper (Pagy, format_cents, category_label,
-                  #   sort helpers, badge helpers for status/frequency/recurring)
-  jobs/           # ImportProcessJob, BalanceSnapshotJob, RecurringDetectionJob
-  javascript/     # Importmap + Stimulus controllers:
-                  #   chart, drilldown, bulk_select, inline_edit, nav_toggle
+  helpers/        # ApplicationHelper with Pagy, sorting, and badge helpers
+  jobs/           # ImportProcessJob, BalanceSnapshotJob, RecurringDetectionJob,
+                  #   DatabaseBackupJob
+  javascript/     # Importmap + Stimulus controllers: chart, drilldown,
+                  #   bulk_select, inline_edit, nav_toggle
 config/
-  routes.rb       # All routes: dashboard, accounts>imports, transactions,
-                  #   categories, budgets, rules, tags, recurring_transactions,
+  routes.rb       # dashboard, accounts>imports, transactions, categories,
+                  #   budgets, rules, tags, recurring, recurring_transactions,
                   #   import_start, good_job mount
-  application.rb  # good_job cron (balance_snapshot 2AM, recurring_detection 3AM)
+  application.rb  # good_job cron (balance_snapshot, recurring_detection,
+                  #   database_backup)
   initializers/   # devise.rb, pagy.rb, standard Rails
 db/
-  schema.rb       # 13 tables + good_job tables
+  schema.rb       # application tables + good_job tables
   seeds.rb        # 15 categories + dev user
-  migrate/        # All migrations through recurring_transactions
+  migrate/        # foundation, imports, recurring detection, and current Phase 6 WIP
+lib/
+  tasks/          # backup.rake and other rake tasks
 spec/
-  models/         # 12 model specs (all models including recurring_transaction)
-  services/       # 5 service specs (CsvAdapter, Categorizer, ImportProcessor,
-                  #   TransferMatcher, RecurringDetector)
-  requests/       # 7 request specs (dashboard, transactions, categories,
-                  #   budgets, rules, tags, recurring_transactions)
-  jobs/           # 1 job spec (BalanceSnapshotJob)
-  factories/      # 11 factory files (all models)
+  models/         # model coverage for core entities
+  services/       # adapter, categorizer, import_processor, transfer_matcher,
+                  #   recurring_detector
+  requests/       # dashboard, transactions, categories, budgets, rules, tags,
+                  #   search, export, merge, recurring flows
+  jobs/           # job specs for scheduled background work
+  factories/      # factory files for the main models
 ```
 
 ## What NOT to Do

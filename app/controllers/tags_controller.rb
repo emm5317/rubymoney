@@ -38,6 +38,30 @@ class TagsController < ApplicationController
     redirect_to tags_path, notice: "Tag deleted."
   end
 
+  def merge
+    source = Tag.find(params[:source_id])
+    target = Tag.find(params[:target_id])
+
+    if source.id == target.id
+      redirect_to tags_path, alert: "Cannot merge a tag into itself."
+      return
+    end
+
+    ActiveRecord::Base.transaction do
+      source.transaction_tags.find_each do |tt|
+        unless TransactionTag.exists?(transaction_id: tt.transaction_id, tag_id: target.id)
+          tt.update!(tag_id: target.id)
+        else
+          tt.destroy!
+        end
+      end
+
+      source.destroy!
+    end
+
+    redirect_to tags_path, notice: "\"#{source.name}\" merged into \"#{target.name}\"."
+  end
+
   private
 
   def set_tag
