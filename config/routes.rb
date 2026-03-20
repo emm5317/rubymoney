@@ -24,6 +24,10 @@ Rails.application.routes.draw do
     resource :reconciliation, only: [:show, :update]
   end
 
+  resource :transaction_review, only: [:show], path: "transactions/review", controller: "transaction_reviews" do
+    post :apply
+  end
+
   resources :transactions do
     member do
       patch :categorize

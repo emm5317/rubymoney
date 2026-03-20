@@ -1,5 +1,8 @@
 import { Controller } from "@hotwired/stimulus"
 
+const CHART_JS_SRC = "https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"
+let chartJsPromise
+
 // Renders a Chart.js chart from a JSON config passed via data attribute.
 // Automatically formats monetary values in tooltips (divides by 100, adds $ prefix).
 //
@@ -17,8 +20,7 @@ export default class extends Controller {
   connect() {
     if (this.chart) { this.chart.destroy(); this.chart = null }
 
-    import("chart.js").then(({ Chart, registerables }) => {
-      Chart.register(...registerables)
+    loadChartJs().then((Chart) => {
       const canvas = this.element.querySelector("canvas")
       if (!canvas) return
 
@@ -74,4 +76,34 @@ export default class extends Controller {
       this.chart = null
     }
   }
+}
+
+function loadChartJs() {
+  if (window.Chart) return Promise.resolve(window.Chart)
+  if (chartJsPromise) return chartJsPromise
+
+  chartJsPromise = new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[data-chartjs-loader="true"]`)
+    if (existing) {
+      existing.addEventListener("load", () => resolve(window.Chart), { once: true })
+      existing.addEventListener("error", () => reject(new Error("Chart.js failed to load")), { once: true })
+      return
+    }
+
+    const script = document.createElement("script")
+    script.src = CHART_JS_SRC
+    script.async = true
+    script.dataset.chartjsLoader = "true"
+    script.onload = () => {
+      if (window.Chart) {
+        resolve(window.Chart)
+      } else {
+        reject(new Error("Chart.js loaded but window.Chart is unavailable"))
+      }
+    }
+    script.onerror = () => reject(new Error("Chart.js failed to load"))
+    document.head.appendChild(script)
+  })
+
+  return chartJsPromise
 }

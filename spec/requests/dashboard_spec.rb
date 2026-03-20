@@ -21,6 +21,7 @@ RSpec.describe "Dashboard", type: :request do
         expect(response).to have_http_status(:ok)
         expect(response.body).to include("Dashboard")
         expect(response.body).to include(account.name)
+        expect(response.body).to include('"application"')
       end
 
       it "shows summary stats with zero values when no transactions" do
@@ -34,9 +35,10 @@ RSpec.describe "Dashboard", type: :request do
 
     context "with transactions" do
       let!(:groceries) { create(:category, :groceries) }
+      let!(:transfers) { create(:category, :transfers) }
       let!(:debit_txn) do
         create(:transaction, account: account, transaction_type: :debit,
-               amount_cents: 5000, date: Date.current, category: groceries)
+               amount_cents: -5000, date: Date.current, category: groceries)
       end
       let!(:credit_txn) do
         create(:transaction, :credit, account: account,
@@ -57,9 +59,20 @@ RSpec.describe "Dashboard", type: :request do
         expect(response.body).to include("$3,000.00")
       end
 
+      it "excludes transfer-category transactions from spending totals" do
+        create(:transaction, account: account, transaction_type: :debit,
+               amount_cents: -7500, date: Date.current, category: transfers,
+               description: "Credit card payment")
+
+        get dashboard_path
+
+        expect(response.body).to include("$50.00")
+        expect(response.body).not_to include("$125.00")
+      end
+
       it "shows uncategorized count" do
         create(:transaction, :uncategorized, account: account,
-               amount_cents: 1000, date: Date.current)
+               amount_cents: -1000, date: Date.current)
         get dashboard_path
         expect(response.body).to include("Uncategorized")
       end
@@ -73,7 +86,7 @@ RSpec.describe "Dashboard", type: :request do
       it "excludes transactions from other users' accounts" do
         other_account = create(:account, user: create(:user))
         create(:transaction, account: other_account, transaction_type: :debit,
-               amount_cents: 999_999, date: Date.current)
+               amount_cents: -999_999, date: Date.current)
         get dashboard_path
         expect(response.body).not_to include("$9,999.99")
       end
@@ -87,6 +100,16 @@ RSpec.describe "Dashboard", type: :request do
         expect(response.body).to include(Date.current.strftime("%B %Y"))
       end
 
+      it "defaults to the latest transaction month when data exists" do
+        create(:transaction, account: account, transaction_type: :debit,
+               amount_cents: -5000, date: Date.new(2026, 2, 6),
+               description: "Latest month purchase")
+
+        get dashboard_path
+
+        expect(response.body).to include("February 2026")
+      end
+
       it "navigates to a specific month" do
         get dashboard_path(month: 1, year: 2025)
         expect(response.body).to include("January 2025")
@@ -98,15 +121,17 @@ RSpec.describe "Dashboard", type: :request do
         expect(response).to have_http_status(:ok)
       end
 
-      it "shows transactions only for the selected month" do
+      it "shows month-specific totals for the selected month" do
         create(:transaction, account: account, transaction_type: :debit,
-               amount_cents: 5000, date: Date.new(2025, 1, 15))
+               amount_cents: -5000, date: Date.new(2025, 1, 15),
+               description: "January Grocery")
         create(:transaction, account: account, transaction_type: :debit,
-               amount_cents: 7000, date: Date.new(2025, 2, 15))
+               amount_cents: -7000, date: Date.new(2025, 2, 15),
+               description: "February Grocery")
 
         get dashboard_path(month: 1, year: 2025)
         expect(response.body).to include("$50.00")
-        expect(response.body).not_to include("$70.00")
+        expect(response.body).to include("January 2025")
       end
     end
 
@@ -117,7 +142,7 @@ RSpec.describe "Dashboard", type: :request do
         create(:budget, category: groceries, month: Date.current.month,
                year: Date.current.year, amount_cents: 30_000)
         create(:transaction, account: account, category: groceries,
-               transaction_type: :debit, amount_cents: 15_000, date: Date.current)
+               transaction_type: :debit, amount_cents: -15_000, date: Date.current)
 
         get dashboard_path
         expect(response.body).to include("Budget vs. Actual")
@@ -153,7 +178,7 @@ RSpec.describe "Dashboard", type: :request do
     context "top merchants" do
       it "shows top merchants when transactions exist" do
         create(:transaction, account: account, transaction_type: :debit,
-               amount_cents: 5000, date: Date.current, description: "STARBUCKS #1234")
+               amount_cents: -5000, date: Date.current, description: "STARBUCKS #1234")
         get dashboard_path
         expect(response.body).to include("Top Merchants")
       end
@@ -162,7 +187,7 @@ RSpec.describe "Dashboard", type: :request do
     context "income vs expenses chart" do
       it "shows income vs expenses section" do
         create(:transaction, account: account, transaction_type: :debit,
-               amount_cents: 5000, date: Date.current)
+               amount_cents: -5000, date: Date.current)
         get dashboard_path
         expect(response.body).to include("Income vs. Expenses")
       end
@@ -188,7 +213,7 @@ RSpec.describe "Dashboard", type: :request do
     let!(:groceries) { create(:category, :groceries) }
     let!(:txn) do
       create(:transaction, account: account, category: groceries,
-             transaction_type: :debit, amount_cents: 2500, date: Date.current,
+             transaction_type: :debit, amount_cents: -2500, date: Date.current,
              description: "WHOLE FOODS")
     end
 
@@ -208,6 +233,20 @@ RSpec.describe "Dashboard", type: :request do
                                     year: Date.current.year)
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("No transactions found")
+    end
+
+    it "returns uncategorized transactions for the uncategorized slice" do
+      create(:transaction, account: account, category: nil,
+             transaction_type: :debit, amount_cents: -1800, date: Date.current,
+             description: "MYSTERY SPEND")
+
+      get drilldown_dashboard_path(category_id: "uncategorized",
+                                   month: Date.current.month,
+                                   year: Date.current.year)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("MYSTERY SPEND")
+      expect(response.body).to include("Uncategorized")
     end
   end
 end

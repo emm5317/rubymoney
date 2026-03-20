@@ -1,0 +1,124 @@
+<div class="max-w-7xl mx-auto px-4 py-8">
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Categorization Review</h1>
+      <p class="text-sm text-gray-500 mt-1">Grouped suggestions for uncategorized transactions. Adjust anything before applying changes.</p>
+    </div>
+    <div class="flex gap-3">
+      <%= link_to "Back to Uncategorized", uncategorized_transactions_path, class: "inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50" %>
+      <%= link_to "All Transactions", transactions_path, class: "inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50" %>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white shadow rounded-lg p-4">
+      <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Uncategorized</p>
+      <p class="mt-1 text-2xl font-bold text-gray-900"><%= @summary.total_transactions %></p>
+    </div>
+    <div class="bg-white shadow rounded-lg p-4">
+      <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Description Groups</p>
+      <p class="mt-1 text-2xl font-bold text-gray-900"><%= @summary.total_groups %></p>
+    </div>
+    <div class="bg-white shadow rounded-lg p-4">
+      <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Suggested Coverage</p>
+      <p class="mt-1 text-2xl font-bold text-indigo-700"><%= @summary.suggested_transactions %></p>
+      <p class="text-xs text-gray-500 mt-1"><%= @summary.suggested_groups %> groups with a category guess</p>
+    </div>
+    <div class="bg-white shadow rounded-lg p-4">
+      <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Rule Candidates</p>
+      <p class="mt-1 text-2xl font-bold text-emerald-700"><%= @summary.rule_ready_groups %></p>
+      <p class="text-xs text-gray-500 mt-1">Repeated groups ready for future rules</p>
+    </div>
+  </div>
+
+  <% if @suggestions.any? %>
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+      <p class="text-sm text-blue-900 font-medium">Rules created from this screen use <code class="bg-blue-100 px-1 py-0.5 rounded">normalized description contains pattern</code>.</p>
+      <p class="text-sm text-blue-800 mt-1">Default suggestions are heuristics only. Leave a row unchecked if you want to review it later.</p>
+    </div>
+
+    <%= form_with url: apply_transaction_review_path, method: :post, class: "space-y-6" do %>
+      <div class="bg-white shadow rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Apply</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Group</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Suggestion</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Future Rule</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 bg-white">
+              <% @suggestions.each_with_index do |suggestion, index| %>
+                <% confidence_classes = if suggestion.confidence >= 0.9
+                  "bg-emerald-100 text-emerald-800"
+                elsif suggestion.confidence >= 0.8
+                  "bg-amber-100 text-amber-800"
+                else
+                  "bg-gray-100 text-gray-700"
+                end %>
+                <tr class="align-top hover:bg-gray-50">
+                  <td class="px-4 py-4">
+                    <%= hidden_field_tag "suggestions[#{index}][signature]", suggestion.signature %>
+                    <%= hidden_field_tag "suggestions[#{index}][rule_pattern]", suggestion.rule_pattern %>
+                    <%= check_box_tag "suggestions[#{index}][apply]", "1", suggestion.suggested?, class: "rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" %>
+                  </td>
+                  <td class="px-6 py-4">
+                    <p class="text-sm font-semibold text-gray-900"><%= suggestion.signature %></p>
+                    <p class="text-xs text-gray-500 mt-1">
+                      <%= pluralize(suggestion.transaction_count, "transaction") %>
+                      • Latest <%= suggestion.latest_date&.strftime("%b %d, %Y") %>
+                      • Net <%= format_cents(suggestion.total_amount_cents) %>
+                    </p>
+                    <div class="mt-2 space-y-1">
+                      <% suggestion.sample_descriptions.each do |description| %>
+                        <p class="text-xs text-gray-500"><%= description %></p>
+                      <% end %>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4">
+                    <% if suggestion.suggested? %>
+                      <div class="flex items-center gap-2">
+                        <%= category_label(suggestion.suggested_category) %>
+                        <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium <%= confidence_classes %>">
+                          <%= suggestion.confidence_percent %>% confident
+                        </span>
+                      </div>
+                      <p class="text-xs text-gray-500 mt-2"><%= suggestion.reason %></p>
+                    <% else %>
+                      <p class="text-sm text-gray-500">No confident suggestion yet.</p>
+                      <p class="text-xs text-gray-400 mt-2">Pick a category manually if you know what this group should be.</p>
+                    <% end %>
+                  </td>
+                  <td class="px-6 py-4">
+                    <%= select_tag "suggestions[#{index}][category_id]",
+                      options_for_select([["Choose category...", ""]] + @categories.map { |category| [category.name, category.id] }, suggestion.suggested_category_id),
+                      class: "block w-52 rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500" %>
+                  </td>
+                  <td class="px-6 py-4">
+                    <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                      <%= check_box_tag "suggestions[#{index}][create_rule]", "1", suggestion.create_rule_default, class: "rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" %>
+                      <span>Create rule</span>
+                    </label>
+                    <p class="mt-2 text-xs text-gray-500">Pattern: <code class="bg-gray-100 px-1 py-0.5 rounded"><%= suggestion.rule_pattern %></code></p>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end">
+        <%= submit_tag "Apply Reviewed Changes", class: "inline-flex items-center px-4 py-2 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700 cursor-pointer" %>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="bg-white shadow rounded-lg p-8 text-center">
+      <p class="text-green-600 font-medium">All transactions are already categorized.</p>
+      <%= link_to "Back to Transactions", transactions_path, class: "mt-2 inline-block text-indigo-600 hover:text-indigo-900" %>
+    </div>
+  <% end %>
+</div>

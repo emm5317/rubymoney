@@ -13,7 +13,7 @@ export default class extends Controller {
   onChartClick(event) {
     const { index } = event.detail
     const categoryId = this.idsValue[index]
-    if (categoryId === undefined) return
+    if (categoryId === undefined || categoryId === "other") return
 
     const frame = document.getElementById("drilldown-frame")
     if (!frame) return
@@ -22,7 +22,7 @@ export default class extends Controller {
       month: this.monthValue,
       year: this.yearValue
     })
-    if (categoryId) params.set("category_id", categoryId)
+    if (categoryId !== null) params.set("category_id", categoryId)
 
     frame.src = `${this.urlValue}?${params.toString()}`
     frame.closest("[data-drilldown-container]")?.classList?.remove("hidden")

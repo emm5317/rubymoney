@@ -2,11 +2,7 @@
   <div class="bg-white shadow rounded-lg overflow-hidden">
     <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
       <h4 class="text-sm font-semibold text-gray-900">
-        <% if category %>
-          Transactions: <%= category.name %>
-        <% else %>
-          Transactions
-        <% end %>
+        Transactions: <%= title %>
       </h4>
       <button onclick="this.closest('[data-drilldown-container]').classList.add('hidden')"
               class="text-gray-400 hover:text-gray-600 text-sm">

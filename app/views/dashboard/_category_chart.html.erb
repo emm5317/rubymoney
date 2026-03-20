@@ -10,13 +10,13 @@
       labels = top.map { |cat_id, _| cat_id ? @categories_map[cat_id]&.name || "Unknown" : "Uncategorized" }
       colors = top.map { |cat_id, _| cat_id ? (@categories_map[cat_id]&.color || "#6366f1") : "#9ca3af" }
       data = top.map { |_, v| v }
-      drilldown_ids = top.map { |cat_id, _| cat_id }
+      drilldown_ids = top.map { |cat_id, _| cat_id || "uncategorized" }
 
       if other_total > 0
         labels << "Other"
         colors << "#d1d5db"
         data << other_total
-        drilldown_ids << nil
+        drilldown_ids << "other"
       end
 
       config = {
